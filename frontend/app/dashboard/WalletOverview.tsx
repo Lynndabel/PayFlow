@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { useState } from 'react'
-import { useAccount, useChainId, useBalance } from 'wagmi'
+import { useAccount, useChainId, useBalance, useSwitchNetwork } from 'wagmi'
 import { 
   Eye, 
   EyeOff, 
@@ -25,9 +25,10 @@ interface WalletOverviewProps {
 }
 
 export function WalletOverview({ onDeposit }: WalletOverviewProps) {
-  const { address } = useAccount()
+  const { address, isConnected } = useAccount()
   const chainId = useChainId()
   const { data: balance } = useBalance({ address })
+  const { switchNetwork } = useSwitchNetwork()
   const { smartWalletAddress, hasWallet, loading: walletLoading, createWallet } = useSmartWallet()
   const { balances, totalUsdValue, loading: balancesLoading, refreshBalances } = useWalletBalances()
   const [balanceVisible, setBalanceVisible] = useState(true)
@@ -48,10 +49,9 @@ export function WalletOverview({ onDeposit }: WalletOverviewProps) {
     }
   }
 
-  const openExplorer = () => {
-    const addressToOpen = smartWalletAddress || address
+  const openExplorer = (addressToOpen: string) => {
     if (addressToOpen) {
-      window.open(getExplorerUrl(addressToOpen, 'address'), '_blank')
+      window.open(getExplorerUrl(5003), '_blank')
     }
   }
 
@@ -150,9 +150,9 @@ export function WalletOverview({ onDeposit }: WalletOverviewProps) {
           <button
             onClick={async () => {
               try {
-                await switchNetwork({
-                  chainId: `0x${MANTLE_TESTNET_CONFIG.id.toString(16)}`,
-                })
+                if (switchNetwork) {
+                  await switchNetwork(MANTLE_TESTNET_CONFIG.id)
+                }
               } catch (error) {
                 console.error('Failed to switch network:', error)
                 toast.error('Please manually switch to Mantle Sepolia Testnet in your wallet')
@@ -366,8 +366,13 @@ export function WalletOverview({ onDeposit }: WalletOverviewProps) {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={openExplorer}
+            onClick={() => {
+              const addressToOpen = smartWalletAddress || address
+              if (addressToOpen) openExplorer(addressToOpen)
+            }}
             className="p-1 hover:bg-dark-600/50 rounded"
+            disabled={!smartWalletAddress}
+            title="View on Explorer"
           >
             <ExternalLink className="w-4 h-4 text-gray-400 hover:text-white transition-colors" />
           </motion.button>

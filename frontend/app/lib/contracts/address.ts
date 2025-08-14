@@ -1,5 +1,5 @@
-// Smart Contract Addresses for Mantle Testnet
-// I will update these addresses after deployment
+// Smart Contract Addresses for Mantle Sepolia Testnet
+// Update these addresses after deployment
 
 // Attempt to load addresses from on-chain broadcast file, fallback to static
 type Addresses = {
@@ -10,34 +10,35 @@ type Addresses = {
   PAYMENT_PROCESSOR: `0x${string}`
 }
 
-let DYNAMIC_ADDRESSES: Partial<Addresses> | undefined
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const broadcast = require('../../../../contracts/broadcast/Deploy.s.sol/5003/run-1754611209.json')
-  const txs: Array<{ contractName?: string; contractAddress?: string }> = broadcast?.transactions || []
-  const map = new Map<string, string>()
-  for (const tx of txs) {
-    if (tx.contractName && tx.contractAddress) {
-      map.set(tx.contractName, tx.contractAddress)
-    }
-  }
-  DYNAMIC_ADDRESSES = {
-    USER_REGISTRY: map.get('UserRegistry') as `0x${string}` | undefined,
-    SMART_WALLET: map.get('SmartWallet') as `0x${string}` | undefined,
-    WALLET_FACTORY: map.get('WalletFactory') as `0x${string}` | undefined,
-    SMART_WALLET_IMPLEMENTATION: map.get('SmartWallet') as `0x${string}` | undefined,
-    PAYMENT_PROCESSOR: map.get('PaymentProcessor') as `0x${string}` | undefined,
-  }
-} catch (_e) {
-  // ignore; fall back to static
-}
+// TODO: Uncomment this section after deploying contracts to Mantle Sepolia Testnet
+// let DYNAMIC_ADDRESSES: Partial<Addresses> | undefined
+// try {
+//   // eslint-disable-next-line @typescript-eslint/no-var-requires
+//   const broadcast = require('../../../../contracts/broadcast/Deploy.s.sol/5003/run-1754611209.json')
+//   const txs: Array<{ contractName?: string; contractAddress?: string }> = broadcast?.transactions || []
+//   const map = new Map<string, string>()
+//   for (const tx of txs) {
+//     if (tx.contractName && tx.contractAddress) {
+//       map.set(tx.contractName, tx.contractAddress)
+//     }
+//   }
+//   DYNAMIC_ADDRESSES = {
+//     USER_REGISTRY: map.get('UserRegistry') as `0x${string}` | undefined,
+//     SMART_WALLET: map.get('SmartWallet') as `0x${string}` | undefined,
+//     WALLET_FACTORY: map.get('WalletFactory') as `0x${string}` | undefined,
+//     SMART_WALLET_IMPLEMENTATION: map.get('SmartWallet') as `0x${string}` | undefined,
+//     PAYMENT_PROCESSOR: map.get('PaymentProcessor') as `0x${string}` | undefined,
+//   }
+// } catch (_e) {
+//   // ignore; fall back to static
+// }
 
 const STATIC_ADDRESSES: Addresses = {
-  USER_REGISTRY: (DYNAMIC_ADDRESSES?.USER_REGISTRY || '0x88bcb19a8984f6877996f6dbbcfba8df01a76b25') as `0x${string}`,
-  SMART_WALLET: (DYNAMIC_ADDRESSES?.SMART_WALLET || '0x990ec214cadf9eba4809c7277414a5e179066ced') as `0x${string}`,
-  WALLET_FACTORY: (DYNAMIC_ADDRESSES?.WALLET_FACTORY || '0x7900f6ddb4363d104147077eba8012e36ebd69e1') as `0x${string}`,
-  SMART_WALLET_IMPLEMENTATION: (DYNAMIC_ADDRESSES?.SMART_WALLET_IMPLEMENTATION || '0x990ec214cadf9eba4809c7277414a5e179066ced') as `0x${string}`,
-  PAYMENT_PROCESSOR: (DYNAMIC_ADDRESSES?.PAYMENT_PROCESSOR || '0x56705c4c5c455a6aa4a0d0ace5c561ac71727e68') as `0x${string}`,
+  USER_REGISTRY: '0x88bcb19a8984f6877996f6dbbcfba8df01a76b25' as `0x${string}`,
+  SMART_WALLET: '0x990ec214cadf9eba4809c7277414a5e179066ced' as `0x${string}`,
+  WALLET_FACTORY: '0x7900f6ddb4363d104147077eba8012e36ebd69e1' as `0x${string}`,
+  SMART_WALLET_IMPLEMENTATION: '0x990ec214cadf9eba4809c7277414a5e179066ced' as `0x${string}`,
+  PAYMENT_PROCESSOR: '0x56705c4c5c455a6aa4a0d0ace5c561ac71727e68' as `0x${string}`,
 }
 
 export const CONTRACT_ADDRESSES: Addresses = STATIC_ADDRESSES
