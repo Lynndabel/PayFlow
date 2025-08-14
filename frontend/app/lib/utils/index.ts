@@ -244,7 +244,7 @@ export function getNetworkName(chainId: number): string {
     5: 'Goerli',
     137: 'Polygon',
     80001: 'Mumbai',
-    5001: 'Mantle Testnet',
+    5003: 'Mantle Sepolia Testnet',
   }
   
   return networks[chainId] || 'Unknown Network'

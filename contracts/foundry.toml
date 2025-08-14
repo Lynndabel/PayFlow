@@ -14,11 +14,9 @@ fs_permissions = [{ access = "write", path = "./deployments" }]
 
 
 [etherscan]
-mantle = { key = "${ETHERSCAN_API_KEY}", url = "https://explorer.testnet.mantle.xyz/api" }
+mantle = { key = "${ETHERSCAN_API_KEY}", url = "https://explorer.sepolia.mantle.xyz/api" }
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
 
-
-
 [rpc_endpoints]
-mantle-testnet = "${RPC_URL}"
+mantle-sepolia-testnet = "${RPC_URL}"

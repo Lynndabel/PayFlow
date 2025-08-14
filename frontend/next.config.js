@@ -11,8 +11,8 @@ const nextConfig = {
     env: {
       NEXT_PUBLIC_APP_NAME: 'PayFlow',
       NEXT_PUBLIC_APP_DESCRIPTION: 'Send crypto using phone numbers',
-      NEXT_PUBLIC_NETWORK_NAME: 'Mantle Testnet',
-      NEXT_PUBLIC_CHAIN_ID: '5001',
+      NEXT_PUBLIC_NETWORK_NAME: 'Mantle Sepolia Testnet',
+      NEXT_PUBLIC_CHAIN_ID: '5003',
     },
     
     // Performance settings

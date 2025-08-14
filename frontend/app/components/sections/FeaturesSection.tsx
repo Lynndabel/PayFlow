@@ -33,11 +33,9 @@ const features = [
   },
   {
     icon: Zap,
-    title: 'Instant Transfers',
-    description: 'Lightning-fast transactions powered by Mantle L2. Send money in seconds, not minutes.',
-    color: 'from-gold-500 to-gold-600',
-    bgColor: 'bg-gold-500/10',
-    borderColor: 'border-gold-500/20',
+    title: 'Lightning Fast',
+    description: 'Powered by Mantle Sepolia Testnet for instant, low-cost transactions that settle in seconds.',
+    color: 'text-gold-400'
   },
   {
     icon: Users,

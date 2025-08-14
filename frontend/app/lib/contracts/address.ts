@@ -13,7 +13,7 @@ type Addresses = {
 let DYNAMIC_ADDRESSES: Partial<Addresses> | undefined
 try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const broadcast = require('../../../../contracts/broadcast/Deploy.s.sol/5001/run-1754611209.json')
+  const broadcast = require('../../../../contracts/broadcast/Deploy.s.sol/5003/run-1754611209.json')
   const txs: Array<{ contractName?: string; contractAddress?: string }> = broadcast?.transactions || []
   const map = new Map<string, string>()
   for (const tx of txs) {
@@ -44,28 +44,28 @@ export const CONTRACT_ADDRESSES: Addresses = STATIC_ADDRESSES
   
   // Network configuration
   export const MANTLE_TESTNET_CONFIG = {
-    id: 5001,
-    name: 'Mantle Testnet',
-    network: 'mantle-testnet',
+    id: 5003,
+    name: 'Mantle Sepolia Testnet',
+    network: 'mantle-sepolia-testnet',
     nativeCurrency: {
       decimals: 18,
-      name: 'Ether',
-      symbol: 'ETH',
+      name: 'Mantle',
+      symbol: 'MNT',
     },
     rpcUrls: {
       default: {
-        http: ['https://rpc.testnet.mantle.xyz'],
-        webSocket: ['wss://ws.testnet.mantle.xyz'],
+        http: ['https://rpc.sepolia.mantle.xyz'],
+        webSocket: ['wss://ws.sepolia.mantle.xyz'],
       },
       public: {
-        http: ['https://rpc.testnet.mantle.xyz'],
-        webSocket: ['wss://ws.testnet.mantle.xyz'],
+        http: ['https://rpc.sepolia.mantle.xyz'],
+        webSocket: ['wss://ws.sepolia.mantle.xyz'],
       },
     },
     blockExplorers: {
       default: {
-        name: 'Mantle Explorer',
-        url: 'https://explorer.testnet.mantle.xyz',
+        name: 'Mantle Sepolia Explorer',
+        url: 'https://explorer.sepolia.mantle.xyz',
       },
     },
     testnet: true,

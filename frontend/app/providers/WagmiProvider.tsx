@@ -7,37 +7,37 @@ import { jsonRpcProvider } from 'wagmi/providers/jsonRpc'
 import { publicProvider } from 'wagmi/providers/public'
 import '@rainbow-me/rainbowkit/styles.css'
 
-// Mantle Testnet configuration
-const mantleTestnet = {
-  id: 5001,
-  name: 'Mantle Testnet',
-  network: 'mantle-testnet',
+// Mantle Sepolia Testnet configuration
+const mantleSepoliaTestnet = {
+  id: 5003,
+  name: 'Mantle Sepolia Testnet',
+  network: 'mantle-sepolia-testnet',
   nativeCurrency: {
     decimals: 18,
-    name: 'Ether',
-    symbol: 'ETH',
+    name: 'Mantle',
+    symbol: 'MNT',
   },
   rpcUrls: {
     default: {
-      http: ['https://rpc.testnet.mantle.xyz'],
-      webSocket: ['wss://ws.testnet.mantle.xyz'],
+      http: ['https://rpc.sepolia.mantle.xyz'],
+      webSocket: ['wss://ws.sepolia.mantle.xyz'],
     },
     public: {
-      http: ['https://rpc.testnet.mantle.xyz'],
-      webSocket: ['wss://ws.testnet.mantle.xyz'],
+      http: ['https://rpc.sepolia.mantle.xyz'],
+      webSocket: ['wss://ws.sepolia.mantle.xyz'],
     },
   },
   blockExplorers: {
     default: {
-      name: 'Mantle Explorer',
-      url: 'https://explorer.testnet.mantle.xyz',
+      name: 'Mantle Sepolia Explorer',
+      url: 'https://explorer.sepolia.mantle.xyz',
     },
   },
   testnet: true,
 }
 
 const { chains, publicClient, webSocketPublicClient } = configureChains(
-  [mantleTestnet],
+  [mantleSepoliaTestnet],
   [
     jsonRpcProvider({
       rpc: (chain) => ({

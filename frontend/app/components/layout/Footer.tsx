@@ -150,7 +150,7 @@ export function Footer() {
               <div className="bg-glass-gold rounded-full px-4 py-2 border border-gold-500/20 hover:border-gold-500/40 transition-all duration-300 hover:shadow-gold">
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-gold-500 rounded-full animate-pulse" />
-                  <span className="text-gold-400 font-medium">Mantle Testnet</span>
+                  <span className="text-gold-400 font-medium">Mantle Sepolia Testnet</span>
                 </div>
               </div>
               <span className="text-gray-500">v1.0.0</span>

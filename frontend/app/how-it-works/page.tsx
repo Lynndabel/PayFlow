@@ -94,7 +94,7 @@ const features = [
   {
     icon: Zap,
     title: 'Lightning Fast',
-    description: 'Powered by Mantle L2 for instant, low-cost transactions that settle in seconds.',
+    description: 'Powered by Mantle Sepolia Testnet for instant, low-cost transactions that settle in seconds.',
     color: 'text-gold-400'
   },
   {
@@ -142,7 +142,7 @@ const faqs = [
   },
   {
     question: 'Are there any fees?',
-    answer: 'There are small network gas fees for transactions (typically $0.01-$0.10 on Mantle L2). We don\'t charge any additional platform fees for basic transfers.'
+    answer: 'There are small network gas fees for transactions (typically $0.01-$0.10 on Mantle Sepolia Testnet). We don\'t charge any additional platform fees for basic transfers.'
   },
   {
     question: 'Can I use multiple phone numbers?',
