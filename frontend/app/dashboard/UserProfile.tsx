@@ -36,9 +36,8 @@ export function UserProfile({ onRegister }: UserProfileProps) {
     toast.success(`${label} copied to clipboard!`)
   }
 
-  const openExplorer = (addr?: string | null) => {
-    const a = addr || address
-    if (a) window.open(`https://explorer.testnet.mantle.xyz/address/${a}`, '_blank')
+  const openExplorer = (a: string) => {
+    if (a) window.open(`https://explorer.sepolia.mantle.xyz/address/${a}`, '_blank')
   }
 
   const removeIdentifier = (id: string) => {
@@ -127,7 +126,7 @@ export function UserProfile({ onRegister }: UserProfileProps) {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => openExplorer(smartWalletAddress)}
+                onClick={() => openExplorer(smartWalletAddress || '')}
                 className="p-1 hover:bg-dark-600/50 rounded"
                 disabled={!smartWalletAddress}
                 title="Open smart wallet in explorer"
@@ -163,7 +162,7 @@ export function UserProfile({ onRegister }: UserProfileProps) {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => openExplorer(address)}
+                onClick={() => openExplorer(address || '')}
                 className="p-1 hover:bg-dark-600/50 rounded"
                 disabled={!address}
                 title="Open connected address in explorer"

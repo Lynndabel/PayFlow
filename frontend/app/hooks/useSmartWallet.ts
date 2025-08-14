@@ -154,8 +154,8 @@ export function useWalletBalances() {
       
       const newBalances: TokenBalance[] = [
         {
-          symbol: 'ETH',
-          name: 'Ethereum',
+          symbol: 'MNT',
+          name: 'Mantle',
           balance: parseFloat(ethBalanceFormatted).toFixed(4),
           usdValue: (parseFloat(ethBalanceFormatted) * ethPrice).toFixed(2),
           change: '+12.5%',
@@ -298,7 +298,7 @@ export function useTransactions() {
           id: `sent-${index}`,
           type: 'sent' as const,
           amount: formatEther(payment.amount),
-          token: payment.token === '0x0000000000000000000000000000000000000000' ? 'ETH' : 'TOKEN',
+          token: payment.token === '0x0000000000000000000000000000000000000000' ? 'MNT' : 'TOKEN',
           identifier: payment.identifier,
           identifierType: payment.identifier.startsWith('+') ? 'phone' as const : 'username' as const,
           timestamp: new Date(Number(payment.timestamp) * 1000),
@@ -311,7 +311,7 @@ export function useTransactions() {
           id: `received-${index}`,
           type: 'received' as const,
           amount: formatEther(payment.amount),
-          token: payment.token === '0x0000000000000000000000000000000000000000' ? 'ETH' : 'TOKEN',
+          token: payment.token === '0x0000000000000000000000000000000000000000' ? 'MNT' : 'TOKEN',
           identifier: payment.identifier,
           identifierType: payment.identifier.startsWith('+') ? 'phone' as const : 'username' as const,
           timestamp: new Date(Number(payment.timestamp) * 1000),
@@ -352,7 +352,7 @@ export function useSendPayment() {
   const sendPayment = useCallback(async (
     identifier: string,
     amount: string,
-    token: 'ETH' | string = 'ETH'
+    token: 'MNT' | string = 'MNT'
   ) => {
     if (!userAddress || !smartWalletAddress) throw new Error('Wallet not initialized')
 
@@ -362,7 +362,7 @@ export function useSendPayment() {
       
       let txHash: Address
       
-      if (token === 'ETH') {
+      if (token === 'MNT') {
         txHash = await smartWalletService.sendPayment(
           smartWalletAddress,
           identifier,

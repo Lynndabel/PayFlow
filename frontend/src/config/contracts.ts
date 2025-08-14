@@ -1,19 +1,18 @@
-// Contract addresses deployed on Mantle Testnet
+// Contract addresses deployed on Mantle Sepolia Testnet
 export const CONTRACT_ADDRESSES = {
-  USER_REGISTRY: "0x88bcb19a8984f6877996f6dbbcfba8df01a76b25",
-  WALLET_FACTORY: "0x7900f6ddb4363d104147077eba8012e36ebd69e1",
-  SMART_WALLET_IMPL: "0x990ec214cadf9eba4809c7277414a5e179066ced",
-  SAMPLE_SMART_WALLET: "0x990ec214cadf9eba4809c7277414a5e179066ced",
-  PAYMENT_PROCESSOR: "0x56705c4c5c455a6aa4a0d0ace5c561ac71727e68",
-} as const;
+  // Add your deployed contract addresses here
+  USER_REGISTRY: "0x...", // Replace with actual address
+  SMART_WALLET_FACTORY: "0x...", // Replace with actual address
+  SMART_WALLET_IMPLEMENTATION: "0x...", // Replace with actual address
+  PAYMENT_PROCESSOR: "0x...", // Replace with actual address
+}
 
-// Network configuration
 export const NETWORK_CONFIG = {
-  chainId: 5001,
-  name: "Mantle Testnet",
-  rpcUrl: "https://rpc.testnet.mantle.xyz",
-  blockExplorer: "https://explorer.testnet.mantle.xyz",
-} as const;
+  name: "Mantle Sepolia Testnet",
+  rpcUrl: "https://rpc.sepolia.mantle.xyz",
+  blockExplorer: "https://explorer.sepolia.mantle.xyz",
+  chainId: 5003,
+}
 
 // Deployment info
 export const DEPLOYMENT_INFO = {

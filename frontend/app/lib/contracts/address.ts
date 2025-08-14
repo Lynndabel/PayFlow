@@ -1,5 +1,5 @@
 // Smart Contract Addresses for Mantle Testnet
-// Update these addresses after deployment
+// I will update these addresses after deployment
 
 // Attempt to load addresses from on-chain broadcast file, fallback to static
 type Addresses = {
@@ -80,7 +80,7 @@ export const CONTRACT_ADDRESSES: Addresses = STATIC_ADDRESSES
   
   // Contract deployment info
   export const DEPLOYMENT_INFO = {
-    network: 'mantle-testnet',
+    network: 'mantle-sepolia-testnet',
     deployedAt: '2024-01-01T00:00:00Z',
     deployer: '0x0000000000000000000000000000000000000000',
     version: '1.0.0',

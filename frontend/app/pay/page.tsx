@@ -14,7 +14,7 @@ function PayContent() {
   const prefillId = params.get('id') || params.get('identifier') || ''
   const [identifier, setIdentifier] = useState(prefillId)
   const [amount, setAmount] = useState('')
-  const [token, setToken] = useState<'ETH' | 'USDC' | 'USDT'>('ETH')
+  const [token, setToken] = useState<'MNT' | 'USDC' | 'USDT'>('MNT')
   const [type, setType] = useState<'phone' | 'username'>(identifier.startsWith('+') ? 'phone' : 'username')
   const { sendPayment, loading } = useSendPayment()
 
@@ -75,7 +75,7 @@ function PayContent() {
               onChange={(e) => setToken(e.target.value as any)}
               className="w-full px-4 py-3 bg-dark-700/50 border border-dark-600 rounded-lg text-white"
             >
-              <option value="ETH">ETH</option>
+              <option value="MNT">MNT</option>
               <option value="USDC">USDC</option>
               <option value="USDT">USDT</option>
             </select>

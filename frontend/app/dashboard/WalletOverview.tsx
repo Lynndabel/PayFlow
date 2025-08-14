@@ -70,12 +70,12 @@ export function WalletOverview({ onDeposit }: WalletOverviewProps) {
     }
 
     if (!isCorrectNetwork) {
-      toast.error(`Please switch to Mantle Testnet (Chain ID: ${MANTLE_TESTNET_CONFIG.id})`)
+      toast.error(`Please switch to Mantle Sepolia Testnet (Chain ID: ${MANTLE_TESTNET_CONFIG.id})`)
       return
     }
 
     if (!hasEnoughGas) {
-      toast.error('Insufficient ETH for gas fees. Need at least 0.001 ETH')
+      toast.error('Insufficient MNT for gas fees. Need at least 0.001 MNT')
       return
     }
 
@@ -125,7 +125,7 @@ export function WalletOverview({ onDeposit }: WalletOverviewProps) {
           </div>
           <h2 className="text-2xl font-bold text-white mb-4">Wrong Network</h2>
           <p className="text-gray-400 mb-6">
-            Please switch to Mantle Testnet to continue
+            Please switch to Mantle Sepolia Testnet to continue
           </p>
           
           <div className="bg-dark-700/30 rounded-xl p-4 mb-6">
@@ -136,7 +136,7 @@ export function WalletOverview({ onDeposit }: WalletOverviewProps) {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">Required Network:</span>
-                <span className="text-green-400">Mantle Testnet ({MANTLE_TESTNET_CONFIG.id})</span>
+                <span className="text-green-400">Mantle Sepolia Testnet ({MANTLE_TESTNET_CONFIG.id})</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">RPC URL:</span>
@@ -155,12 +155,12 @@ export function WalletOverview({ onDeposit }: WalletOverviewProps) {
                 })
               } catch (error) {
                 console.error('Failed to switch network:', error)
-                toast.error('Please manually switch to Mantle Testnet in your wallet')
+                toast.error('Please manually switch to Mantle Sepolia Testnet in your wallet')
               }
             }}
             className="px-6 py-3 bg-gradient-to-r from-gold-600 to-gold-700 hover:from-gold-500 hover:to-gold-600 text-white font-semibold rounded-lg transition-colors duration-200"
           >
-            Switch to Mantle Testnet
+            Switch to Mantle Sepolia Testnet
           </button>
         </div>
       </motion.div>
@@ -210,7 +210,7 @@ export function WalletOverview({ onDeposit }: WalletOverviewProps) {
                 <span className="font-semibold">Low Balance Warning</span>
               </div>
               <p className="text-sm text-orange-200/80 mt-1">
-                You have {balance?.formatted || '0'} ETH. You may need more for gas fees.
+                You have {balance?.formatted || '0'} MNT. You may need more for gas fees.
               </p>
             </div>
           )}

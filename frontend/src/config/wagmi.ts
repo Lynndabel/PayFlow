@@ -6,30 +6,30 @@ import { WalletConnectConnector } from 'wagmi/connectors/walletConnect'
 import { jsonRpcProvider } from 'wagmi/providers/jsonRpc'
 import { publicProvider } from 'wagmi/providers/public'
 
-// Define Mantle Testnet
-const mantleTestnet = {
-  id: 5001,
-  name: 'Mantle Testnet',
-  network: 'mantle-testnet',
+// Define Mantle Sepolia Testnet
+const mantleSepoliaTestnet = {
+  id: 5003,
+  name: 'Mantle Sepolia Testnet',
+  network: 'mantle-sepolia-testnet',
   nativeCurrency: {
     decimals: 18,
-    name: 'Ether',
-    symbol: 'ETH',
+    name: 'Mantle',
+    symbol: 'MNT',
   },
   rpcUrls: {
     default: {
-      http: ['https://rpc.testnet.mantle.xyz'],
-      webSocket: ['wss://ws.testnet.mantle.xyz'],
+      http: ['https://rpc.sepolia.mantle.xyz'],
+      webSocket: ['wss://ws.sepolia.mantle.xyz'],
     },
     public: {
-      http: ['https://rpc.testnet.mantle.xyz'],
-      webSocket: ['wss://ws.testnet.mantle.xyz'],
+      http: ['https://rpc.sepolia.mantle.xyz'],
+      webSocket: ['wss://ws.sepolia.mantle.xyz'],
     },
   },
   blockExplorers: {
     default: {
-      name: 'Mantle Explorer',
-      url: 'https://explorer.testnet.mantle.xyz',
+      name: 'Mantle Sepolia Explorer',
+      url: 'https://explorer.sepolia.mantle.xyz',
     },
   },
   testnet: true,
@@ -37,14 +37,14 @@ const mantleTestnet = {
 
 // Configure chains and providers
 const { chains, publicClient, webSocketPublicClient } = configureChains(
-  [mainnet, sepolia, localhost, mantleTestnet],
+  [mainnet, sepolia, localhost, mantleSepoliaTestnet],
   [
     jsonRpcProvider({
       rpc: (chain) => {
-        if (chain.id === 5001) {
+        if (chain.id === 5003) {
           return {
-            http: 'https://rpc.testnet.mantle.xyz',
-            webSocket: 'wss://ws.testnet.mantle.xyz',
+            http: 'https://rpc.sepolia.mantle.xyz',
+            webSocket: 'wss://ws.sepolia.mantle.xyz',
           }
         }
         return null

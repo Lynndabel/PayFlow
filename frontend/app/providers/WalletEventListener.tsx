@@ -27,7 +27,7 @@ export default function WalletEventListener() {
             const args = log.args as any
             const amount = args?.amount as bigint
             const from = args?.from as Address
-            toast.success(`Payment received: ${Number(formatEther(amount)).toFixed(6)} ETH from ${from.slice(0, 6)}...${from.slice(-4)}`)
+            toast.success(`Payment received: ${Number(formatEther(amount)).toFixed(6)} MNT from ${from.slice(0, 6)}...${from.slice(-4)}`)
             // Refresh UI
             refreshBalances()
             refreshTransactions()
