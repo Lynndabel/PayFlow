@@ -1,7 +1,7 @@
 'use client'
 
 import { WagmiConfig, createConfig, configureChains } from 'wagmi'
-import { RainbowKitProvider, getDefaultWallets, connectorsForWallets } from '@rainbow-me/rainbowkit'
+import { RainbowKitProvider, getDefaultWallets, connectorsForWallets, darkTheme } from '@rainbow-me/rainbowkit'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { jsonRpcProvider } from 'wagmi/providers/jsonRpc'
 import { publicProvider } from 'wagmi/providers/public'
@@ -68,6 +68,41 @@ const wagmiConfig = createConfig({
 
 const queryClient = new QueryClient()
 
+// Custom RainbowKit theme with gold colors
+const customTheme = darkTheme({
+  accentColor: '#eab308', // gold-500
+  accentColorForeground: '#ffffff',
+  borderRadius: 'large',
+  fontStack: 'system',
+  overlayBlur: 'small',
+  colors: {
+    accentColor: '#eab308', // gold-500
+    accentColorForeground: '#ffffff',
+    actionButtonBorder: '#ca8a04', // gold-600
+    actionButtonBorderMobile: '#ca8a04', // gold-600
+    actionButtonSecondaryBackground: '#1e293b', // dark-800
+    connectButtonBackground: '#eab308', // gold-500
+    connectButtonBackgroundError: '#ef4444', // red-500
+    connectButtonInnerBackground: '#eab308', // gold-500
+    connectButtonText: '#ffffff',
+    connectButtonTextError: '#ffffff',
+    connectionIndicator: '#10b981', // green-500
+    downloadBottomCardBackground: '#1e293b', // dark-800
+    downloadTopCardBackground: '#334155', // dark-700
+    error: '#ef4444', // red-500
+    modalBackground: '#0f172a', // dark-900
+    modalBackdrop: 'rgba(0, 0, 0, 0.5)',
+    modalBorder: '#334155', // dark-700
+    modalText: '#ffffff',
+    modalTextSecondary: '#94a3b8', // dark-400
+    profileAction: '#334155', // dark-700
+    profileActionHover: '#475569', // dark-600
+    profileForeground: '#ffffff',
+    selectedOptionBorder: '#eab308', // gold-500
+    standby: '#f59e0b', // amber-500
+  },
+})
+
 export function WagmiProvider({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
@@ -75,6 +110,7 @@ export function WagmiProvider({ children }: { children: React.ReactNode }) {
         <RainbowKitProvider
           chains={chains}
           modalSize="compact"
+          theme={customTheme}
         >
           {children}
         </RainbowKitProvider>
