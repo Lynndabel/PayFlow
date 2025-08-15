@@ -40,7 +40,7 @@ export function DepositModal({ onClose }: DepositModalProps) {
 
   const openExplorer = () => {
     if (address) {
-      window.open(`https://explorer.testnet.mantle.xyz/address/${address}`, '_blank')
+      window.open(`https://explorer-holesky.morphl2.io/address/${address}`, '_blank')
     }
   }
 
@@ -114,18 +114,18 @@ export function DepositModal({ onClose }: DepositModalProps) {
                     title: 'From Another Wallet',
                     description: 'Transfer from MetaMask, hardware wallet, etc.',
                     icon: Smartphone,
-                    color: 'from-gold-500 to-gold-600',
-                    bgColor: 'bg-gold-500/10',
-                    borderColor: 'border-gold-500/20',
+                    color: 'from-primary-500 to-primary-600',
+                    bgColor: 'bg-primary-500/10',
+                    borderColor: 'border-primary-500/20',
                   },
                   {
                     key: 'fiat',
                     title: 'Buy with Card',
                     description: 'Purchase crypto with credit/debit card',
                     icon: CreditCard,
-                    color: 'from-gold-500 to-gold-600',
-                    bgColor: 'bg-gold-500/10',
-                    borderColor: 'border-gold-500/20',
+                    color: 'from-secondary-500 to-secondary-600',
+                    bgColor: 'bg-secondary-500/10',
+                    borderColor: 'border-secondary-500/20',
                     comingSoon: true,
                   },
                   {
@@ -133,9 +133,9 @@ export function DepositModal({ onClose }: DepositModalProps) {
                     title: 'Bridge from L1',
                     description: 'Bridge ETH from Ethereum mainnet',
                     icon: Banknote,
-                    color: 'from-gold-500 to-gold-600',
-                    bgColor: 'bg-gold-500/10',
-                    borderColor: 'border-gold-500/20',
+                    color: 'from-accent-500 to-accent-600',
+                    bgColor: 'bg-accent-500/10',
+                    borderColor: 'border-accent-500/20',
                     comingSoon: true,
                   }
                 ].map((method) => {
@@ -190,8 +190,8 @@ export function DepositModal({ onClose }: DepositModalProps) {
                   <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-yellow-300 mb-1">Important Notice</h4>
-                    <p className="text-sm text-orange-200/80">
-                      Only send funds on Mantle Testnet. Sending from other networks will result in permanent loss.
+                    <p className="text-sm text-yellow-200/80">
+                      Only send funds on Morph Testnet. Sending from other networks will result in permanent loss.
                     </p>
                   </div>
                 </div>
@@ -202,7 +202,7 @@ export function DepositModal({ onClose }: DepositModalProps) {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-400">Network</span>
-                      <span className="text-white">Mantle Testnet</span>
+                      <span className="text-white">Morph Holesky Testnet</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Chain ID</span>
@@ -210,7 +210,7 @@ export function DepositModal({ onClose }: DepositModalProps) {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">RPC URL</span>
-                      <span className="text-white text-xs">rpc.testnet.mantle.xyz</span>
+                      <span className="text-white text-xs">rpc-quicknode-holesky.morphl2.io</span>
                     </div>
                   </div>
                 </div>
@@ -326,7 +326,7 @@ export function DepositModal({ onClose }: DepositModalProps) {
                       <span className="flex-shrink-0 w-5 h-5 bg-primary-500/20 text-primary-300 rounded-full flex items-center justify-center text-xs font-bold">
                         3
                       </span>
-                      <span>Make sure you're on Mantle Testnet</span>
+                      <span>Make sure you're on Morph Testnet</span>
                     </li>
                     <li className="flex items-start space-x-2">
                       <span className="flex-shrink-0 w-5 h-5 bg-primary-500/20 text-primary-300 rounded-full flex items-center justify-center text-xs font-bold">

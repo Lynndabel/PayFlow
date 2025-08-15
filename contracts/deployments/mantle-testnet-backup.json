@@ -13,3 +13,4 @@
   "deploymentFee": "1000000000000000",
   "reservedUsernames": ["admin","root","system","wallet","support","help","api","bot"]
 }
+
