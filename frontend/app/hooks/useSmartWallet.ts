@@ -138,12 +138,30 @@ export function useSmartWallet() {
     }
   }, [userAddress])
 
+  const refreshWallet = useCallback(async () => {
+    if (!userAddress) return
+    try {
+      setLoading(true)
+      const walletExists = await smartWalletService.hasWallet(userAddress)
+      setHasWallet(walletExists)
+      if (walletExists) {
+        const walletAddr = await smartWalletService.getUserWallet(userAddress)
+        setSmartWalletAddress(walletAddr)
+      }
+    } catch (err) {
+      console.error('Failed to refresh wallet:', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [userAddress])
+
   return {
     smartWalletAddress,
     hasWallet,
     loading,
     error,
     createWallet,
+    refreshWallet,
   }
 }
 

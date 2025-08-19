@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAccount } from 'wagmi'
-import { useSmartWallet } from '../hooks/useSmartWallet'
+import { useSmartWallet, useWalletBalances } from '../hooks/useSmartWallet'
 import { smartWalletService } from '@/lib/contracts/contracts'
 import { parseEther } from 'viem'
 import { 
@@ -27,6 +27,7 @@ interface DepositModalProps {
 export function DepositModal({ onClose }: DepositModalProps) {
   const { address } = useAccount()
   const { smartWalletAddress } = useSmartWallet()
+  const { refreshBalances } = useWalletBalances()
   const [depositMethod, setDepositMethod] = useState<'wallet' | 'fiat' | 'bridge'>('wallet')
   const [showQR, setShowQR] = useState(false)
   const [amount, setAmount] = useState('')
@@ -54,6 +55,10 @@ export function DepositModal({ onClose }: DepositModalProps) {
         address
       )
       await smartWalletService.waitForTransaction(txHash as any)
+      
+      // Refresh balances after successful deposit
+      await refreshBalances()
+      
       toast.success('Deposited to Smart Wallet!')
       onClose()
     } catch (e) {

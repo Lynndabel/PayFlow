@@ -17,7 +17,7 @@ import {
   AlertTriangle
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { useSmartWallet, useWalletBalances } from '@/hooks/useSmartWallet'
+import { useSmartWallet, useWalletBalances, useUserIdentifiers } from '@/hooks/useSmartWallet'
 import { getExplorerUrl, MANTLE_TESTNET_CONFIG } from '@/lib/contracts/address'
 
 interface WalletOverviewProps {
@@ -29,8 +29,9 @@ export function WalletOverview({ onDeposit }: WalletOverviewProps) {
   const chainId = useChainId()
   const { data: balance } = useBalance({ address })
   const { switchNetwork } = useSwitchNetwork()
-  const { smartWalletAddress, hasWallet, loading: walletLoading, createWallet } = useSmartWallet()
+  const { smartWalletAddress, hasWallet, loading: walletLoading, createWallet, refreshWallet } = useSmartWallet()
   const { balances, totalUsdValue, loading: balancesLoading, refreshBalances } = useWalletBalances()
+  const { refreshIdentifiers } = useUserIdentifiers()
   const [balanceVisible, setBalanceVisible] = useState(true)
   const [creatingWallet, setCreatingWallet] = useState(false)
   const [debugInfo, setDebugInfo] = useState(false)
@@ -85,6 +86,15 @@ export function WalletOverview({ onDeposit }: WalletOverviewProps) {
       
       const result = await createWallet()
       console.log('✅ Wallet creation result:', result)
+      
+      // Refresh all data after successful wallet creation
+      console.log('🔄 Refreshing wallet data...')
+      await Promise.all([
+        refreshWallet(),
+        refreshBalances(),
+        refreshIdentifiers()
+      ])
+      console.log('✅ Data refreshed successfully!')
       
       toast.success('Smart wallet created successfully!')
     } catch (error: any) {

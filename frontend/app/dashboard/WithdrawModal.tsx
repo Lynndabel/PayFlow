@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
+import { useWalletBalances } from '@/hooks/useSmartWallet'
 import {
   X,
   ArrowUpFromLine,
@@ -44,6 +45,7 @@ export function WithdrawModal({ onClose }: WithdrawModalProps) {
   const [step, setStep] = useState<'form' | 'confirm' | 'processing' | 'success'>('form')
   const [selectedToken, setSelectedToken] = useState(tokens[0])
   const [estimatedGas, setEstimatedGas] = useState('0.0021')
+  const { refreshBalances } = useWalletBalances()
 
   const {
     register,
@@ -69,8 +71,12 @@ export function WithdrawModal({ onClose }: WithdrawModalProps) {
     setStep('processing')
     
     try {
-      // Simulate transaction
+      // Simulate transaction (TODO: Replace with real blockchain withdrawal)
       await new Promise(resolve => setTimeout(resolve, 3000))
+      
+      // Refresh balances after successful withdrawal
+      await refreshBalances()
+      
       setStep('success')
       toast.success('Withdrawal completed successfully!')
     } catch (error) {

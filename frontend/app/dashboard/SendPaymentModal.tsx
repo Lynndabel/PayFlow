@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Send, X, ChevronDown, AlertCircle, CheckCircle, Loader2, Smartphone, User, DollarSign, ArrowRight, Zap, Check } from 'lucide-react'
-import { useSendPayment, useUserIdentifiers } from '@/hooks/useSmartWallet'
+import { useSendPayment, useUserIdentifiers, useWalletBalances } from '@/hooks/useSmartWallet'
 import { toast } from 'react-hot-toast'
 
 interface SendPaymentModalProps {
@@ -45,6 +45,7 @@ export function SendPaymentModal({ onClose }: SendPaymentModalProps) {
   const [estimatedGas, setEstimatedGas] = useState('0.0023')
   const { sendPayment, loading: sending } = useSendPayment()
   const { identifiers } = useUserIdentifiers()
+  const { refreshBalances } = useWalletBalances()
 
   const {
     register,
@@ -108,6 +109,10 @@ export function SendPaymentModal({ onClose }: SendPaymentModalProps) {
     setStep('sending')
     try {
       await sendPayment(watchedValues.recipient, watchedValues.amount, selectedToken.symbol)
+      
+      // Refresh balances after successful payment
+      await refreshBalances()
+      
       setStep('success')
     } catch (error) {
       toast.error('Failed to send payment')

@@ -19,7 +19,7 @@ import {
   Loader2,
   Copy
 } from 'lucide-react'
-import { useUserIdentifiers, useSmartWallet } from '@/hooks/useSmartWallet'
+import { useUserIdentifiers, useSmartWallet, useWalletBalances } from '@/hooks/useSmartWallet'
 import { isValidPhoneNumber, normalizePhoneE164 } from '@/lib/utils'
 import { phoneVerificationService } from '@/api/phone-service'
 
@@ -57,9 +57,12 @@ export function RegisterIdentifierModal({ onClose, onSuccess }: RegisterIdentifi
   const [isChecking, setIsChecking] = useState(false)
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null)
   const [isPhoneVerified, setIsPhoneVerified] = useState(false)
+  const [sendingCode, setSendingCode] = useState(false)
+  const [resendingCode, setResendingCode] = useState(false)
 
-  const { registerIdentifier, checkAvailability } = useUserIdentifiers()
-  const { hasWallet, createWallet } = useSmartWallet()
+  const { registerIdentifier, checkAvailability, refreshIdentifiers } = useUserIdentifiers()
+  const { hasWallet, createWallet, refreshWallet } = useSmartWallet()
+  const { refreshBalances } = useWalletBalances()
 
   const {
     register,
@@ -121,6 +124,7 @@ export function RegisterIdentifierModal({ onClose, onSuccess }: RegisterIdentifi
 
   const onSubmit = async (data: IdentifierForm) => {
     if (data.type === 'phone') {
+      setSendingCode(true)
       try {
         const normalized = normalizePhoneE164(data.identifier.trim())
         if (!normalized) {
@@ -144,6 +148,8 @@ export function RegisterIdentifierModal({ onClose, onSuccess }: RegisterIdentifi
       } catch (error) {
         toast.error('Failed to send verification code')
         console.error(error)
+      } finally {
+        setSendingCode(false)
       }
     } else {
       // For usernames, go directly to processing
@@ -195,9 +201,17 @@ export function RegisterIdentifierModal({ onClose, onSuccess }: RegisterIdentifi
       if (!hasWallet) {
         // Create smart wallet and register identifier in one tx
         await createWallet(valueToRegister, typeToRegister)
+        // Refresh all data after wallet creation
+        await Promise.all([
+          refreshWallet(),
+          refreshBalances(),
+          refreshIdentifiers()
+        ])
       } else {
         // Register identifier to existing wallet
         await registerIdentifier(valueToRegister, typeToRegister)
+        // Refresh identifiers after registration
+        await refreshIdentifiers()
       }
       setStep('success')
       onSuccess?.()
@@ -209,6 +223,7 @@ export function RegisterIdentifierModal({ onClose, onSuccess }: RegisterIdentifi
   }
 
   const resendCode = async () => {
+    setResendingCode(true)
     try {
       const normalized = normalizePhoneE164(watchedValues.identifier.trim())
       if (!normalized) {
@@ -231,6 +246,8 @@ export function RegisterIdentifierModal({ onClose, onSuccess }: RegisterIdentifi
     } catch (error) {
       toast.error('Failed to resend code')
       console.error(error)
+    } finally {
+      setResendingCode(false)
     }
   }
 
@@ -432,13 +449,22 @@ export function RegisterIdentifierModal({ onClose, onSuccess }: RegisterIdentifi
                 {/* Submit */}
                 <button
                   type="submit"
-                  disabled={!isValid || isAvailable === false || isChecking}
+                  disabled={!isValid || isAvailable === false || isChecking || sendingCode}
                   className="w-full flex items-center justify-center space-x-2 py-4 bg-gradient-to-r from-secondary-600 to-accent-600 hover:from-secondary-500 hover:to-accent-500 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold rounded-xl transition-all duration-200 disabled:cursor-not-allowed"
                 >
-                  <span>
-                    {identifierType === 'phone' ? 'Send Verification Code' : 'Register Username'}
-                  </span>
-                  <ArrowRight className="w-5 h-5" />
+                  {sendingCode && identifierType === 'phone' ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Sending Code...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>
+                        {identifierType === 'phone' ? 'Send Verification Code' : 'Register Username'}
+                      </span>
+                      <ArrowRight className="w-5 h-5" />
+                    </>
+                  )}
                 </button>
               </form>
             )}
@@ -499,9 +525,17 @@ export function RegisterIdentifierModal({ onClose, onSuccess }: RegisterIdentifi
                 <div className="text-center">
                   <button
                     onClick={resendCode}
-                    className="text-sm text-secondary-400 hover:text-secondary-300 transition-colors"
+                    disabled={resendingCode}
+                    className="text-sm text-secondary-400 hover:text-secondary-300 disabled:text-gray-500 transition-colors disabled:cursor-not-allowed flex items-center justify-center space-x-1"
                   >
-                    Didn't receive the code? Resend
+                    {resendingCode ? (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <span>Sending...</span>
+                      </>
+                    ) : (
+                      <span>Didn't receive the code? Resend</span>
+                    )}
                   </button>
                 </div>
 
