@@ -15,6 +15,7 @@ import { RegisterIdentifierModal } from './RegisterIdentifierModal'
 export default function DashboardPage() {
   const { isConnected } = useAccount()
   const router = useRouter()
+  const [mounted, setMounted] = useState(false)
   
   // Modal states
   const [showDepositModal, setShowDepositModal] = useState(false)
@@ -32,10 +33,25 @@ export default function DashboardPage() {
   const handleRegister = () => setShowRegisterModal(true)
 
   useEffect(() => {
-    if (!isConnected) {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (mounted && !isConnected) {
       router.push('/')
     }
-  }, [isConnected, router])
+  }, [mounted, isConnected, router])
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-dark-900 via-dark-800 to-dark-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-500 mx-auto"></div>
+          <p className="text-gray-300 mt-4">Loading...</p>
+        </div>
+      </div>
+    )
+  }
 
   if (!isConnected) {
     return (

@@ -171,43 +171,9 @@ export function BatchPaymentModal({ onClose }: BatchPaymentModalProps) {
   }
 
   const onSubmit = async () => {
-    if (!account) return toast.error('Connect wallet')
-    if (rows.length === 0) return toast.error('Add at least one recipient')
-    const recipients = rows.map((r) => r.identifier.trim()).filter(Boolean)
-    const amountStrings = rows.map((r) => r.amount.trim()).filter(Boolean)
-    if (recipients.length !== rows.length || amountStrings.length !== rows.length) {
-      return toast.error('Fill all rows')
-    }
-    try {
-      setLoading(true)
-      // parse amounts; for ERC20 respect token decimals
-      const amounts = amountStrings.map((a) => {
-        if (token === 'ERC20') {
-          const [whole, fraction = ''] = a.split('.')
-          const padded = (fraction + '0'.repeat(tokenDecimals)).slice(0, tokenDecimals)
-          const normalized = `${whole}${padded ? '.' + padded : ''}`
-          // For non-18 decimals we cannot rely on parseEther. Implement simple bigint parse
-          const integer = BigInt(whole || '0') * BigInt(10) ** BigInt(tokenDecimals)
-          const frac = BigInt(padded || '0')
-          return integer + frac
-        }
-        return parseEther(a)
-      })
-      const txHash = await smartWalletService.processBatchPayment(
-        recipients,
-        amounts,
-        effectiveToken,
-        account
-      )
-      await smartWalletService.waitForTransaction(txHash as any)
-      toast.success('Batch payment submitted')
-      onClose()
-    } catch (e) {
-      console.error(e)
-      toast.error(formatError(e))
-    } finally {
-      setLoading(false)
-    }
+    // Batch payments feature coming soon
+    toast.success('🚀 Coming soon! Batch payments are currently under development.')
+    onClose()
   }
 
   return (

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./UserRegistry.sol";
@@ -134,15 +134,33 @@ contract SmartWallet is ReentrancyGuard {
         validAmount(amount) 
         nonReentrant 
     {
-        require(balances[msg.sender] >= amount, "Insufficient balance");
+        address user = msg.sender;
+        require(balances[user] >= amount, "Insufficient balance");
+        require(user != address(0), "Invalid user address");
         
+        // First check: Verify identifier exists and get recipient
         address recipient = userRegistry.getWallet(identifier);
-        require(recipient != address(0), "Recipient not found");
-        require(recipient != msg.sender, "Cannot send to yourself");
+        require(recipient != address(0), "Identifier not registered");
+        
+        // Second check: Prevent sending to own identifiers (most specific check first)
+        string[] memory userIdentifiers = userRegistry.getIdentifiers(user);
+        bool isOwnIdentifier = false;
+        for (uint256 i = 0; i < userIdentifiers.length; i++) {
+            if (keccak256(bytes(userIdentifiers[i])) == keccak256(bytes(identifier))) {
+                isOwnIdentifier = true;
+                break;
+            }
+        }
+        require(!isOwnIdentifier, "Cannot send to your own identifier");
+        
+        // Third check: General security checks
+        require(recipient != user, "Cannot send to yourself");
+        require(recipient != address(this), "Cannot send to contract");
+        require(recipient != msg.sender, "Cannot send to caller");
         
         uint256 fee = (feeBps > 0 && feeRecipient != address(0)) ? (amount * feeBps) / 10_000 : 0;
         uint256 net = amount - fee;
-        balances[msg.sender] -= amount;
+        balances[user] -= amount;
         balances[recipient] += net;
         if (fee > 0) {
             balances[feeRecipient] += fee;
@@ -150,7 +168,7 @@ contract SmartWallet is ReentrancyGuard {
         
         // Record payment history
         Payment memory payment = Payment({
-            from: msg.sender,
+            from: user,
             to: recipient,
             amount: amount,
             token: address(0),
@@ -158,11 +176,11 @@ contract SmartWallet is ReentrancyGuard {
             timestamp: block.timestamp
         });
         
-        sentPayments[msg.sender].push(payment);
+        sentPayments[user].push(payment);
         receivedPayments[recipient].push(payment);
         
-        emit PaymentSent(msg.sender, recipient, amount, identifier);
-        emit PaymentReceived(msg.sender, recipient, amount);
+        emit PaymentSent(user, recipient, amount, identifier);
+        emit PaymentReceived(user, recipient, amount);
     }
 
     /**
@@ -176,16 +194,34 @@ contract SmartWallet is ReentrancyGuard {
         validAmount(amount) 
         nonReentrant 
     {
+        address user = msg.sender;
         require(token != address(0), "Invalid token address");
-        require(tokenBalances[msg.sender][token] >= amount, "Insufficient token balance");
+        require(tokenBalances[user][token] >= amount, "Insufficient token balance");
+        require(user != address(0), "Invalid user address");
         
+        // First check: Verify identifier exists and get recipient
         address recipient = userRegistry.getWallet(identifier);
-        require(recipient != address(0), "Recipient not found");
-        require(recipient != msg.sender, "Cannot send to yourself");
+        require(recipient != address(0), "Identifier not registered");
+        
+        // Second check: Prevent sending to own identifiers (most specific check first)
+        string[] memory userIdentifiers = userRegistry.getIdentifiers(user);
+        bool isOwnIdentifier = false;
+        for (uint256 i = 0; i < userIdentifiers.length; i++) {
+            if (keccak256(bytes(userIdentifiers[i])) == keccak256(bytes(identifier))) {
+                isOwnIdentifier = true;
+                break;
+            }
+        }
+        require(!isOwnIdentifier, "Cannot send to your own identifier");
+        
+        // Third check: General security checks
+        require(recipient != user, "Cannot send to yourself");
+        require(recipient != address(this), "Cannot send to contract");
+        require(recipient != msg.sender, "Cannot send to caller");
         
         uint256 fee = (feeBps > 0 && feeRecipient != address(0)) ? (amount * feeBps) / 10_000 : 0;
         uint256 net = amount - fee;
-        tokenBalances[msg.sender][token] -= amount;
+        tokenBalances[user][token] -= amount;
         tokenBalances[recipient][token] += net;
         if (fee > 0) {
             tokenBalances[feeRecipient][token] += fee;
@@ -193,7 +229,7 @@ contract SmartWallet is ReentrancyGuard {
         
         // Record payment history
         Payment memory payment = Payment({
-            from: msg.sender,
+            from: user,
             to: recipient,
             amount: amount,
             token: token,
@@ -201,11 +237,11 @@ contract SmartWallet is ReentrancyGuard {
             timestamp: block.timestamp
         });
         
-        sentPayments[msg.sender].push(payment);
+        sentPayments[user].push(payment);
         receivedPayments[recipient].push(payment);
         
-        emit TokenPaymentSent(msg.sender, recipient, token, amount, identifier);
-        emit TokenPaymentReceived(msg.sender, recipient, token, amount);
+        emit TokenPaymentSent(user, recipient, token, amount, identifier);
+        emit TokenPaymentReceived(user, recipient, token, amount);
     }
 
     /**
@@ -220,6 +256,7 @@ contract SmartWallet is ReentrancyGuard {
     {
         require(recipient != address(0), "Invalid recipient address");
         require(recipient != msg.sender, "Cannot send to yourself");
+        require(recipient != address(this), "Cannot send to contract");
         require(balances[msg.sender] >= amount, "Insufficient balance");
         
         balances[msg.sender] -= amount;

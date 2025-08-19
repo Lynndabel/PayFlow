@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { toast } from 'react-hot-toast'
 import { 
   Send, 
   ArrowDownToLine, 
@@ -87,6 +88,12 @@ const actions = [
 export function QuickActions({ onSend, onDeposit, onWithdraw, onBatch, onSchedule, onRequest }: QuickActionsProps) {
 
   const handleActionClick = (actionId: string) => {
+    // Show "Coming soon" for disabled features
+    if (['batch', 'schedule', 'request'].includes(actionId)) {
+      toast.success('🚀 Coming soon! This feature is currently under development.')
+      return
+    }
+
     switch (actionId) {
       case 'send':
         onSend()

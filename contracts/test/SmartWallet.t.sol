@@ -234,29 +234,84 @@ contract SmartWalletTest is Test {
     function test_RevertWhen_SendPaymentToSelf() public {
         uint256 depositAmount = 1 ether;
         uint256 sendAmount = 0.3 ether;
-        string memory senderPhone = "+1234567890";
         
         // User1 deposits
         vm.prank(user1);
         smartWallet.deposit{value: depositAmount}();
         
+        // Register a different identifier that also points to user1
+        // This tests the case where recipient address == user address
         vm.prank(user1);
-        vm.expectRevert("Cannot send to yourself");
-        smartWallet.sendPayment(senderPhone, sendAmount);
+        userRegistry.registerUser("self_test", "username", user1);
+        
+        // Try to send to an identifier that resolves to the same user (should fail)
+        vm.prank(user1);
+        vm.expectRevert("Cannot send to your own identifier");
+        smartWallet.sendPayment("self_test", sendAmount);
     }
 
-    function test_RevertWhen_SendPaymentNonexistentRecipient() public {
+    function test_RevertWhen_SendPaymentToOwnIdentifier() public {
         uint256 depositAmount = 1 ether;
         uint256 sendAmount = 0.3 ether;
-        string memory nonexistentPhone = "+9999999999";
         
         // User1 deposits
         vm.prank(user1);
         smartWallet.deposit{value: depositAmount}();
         
+        // Try to send to own identifier (should fail with enhanced security)
+        // User1 has identifier "+1234567890" registered to them
+        vm.prank(user1);
+        vm.expectRevert("Cannot send to your own identifier");
+        smartWallet.sendPayment("+1234567890", sendAmount);
+    }
+
+    function test_RevertWhen_SendPaymentToContract() public {
+        uint256 depositAmount = 1 ether;
+        uint256 sendAmount = 0.3 ether;
+        
+        // User1 deposits
+        vm.prank(user1);
+        smartWallet.deposit{value: depositAmount}();
+        
+        // First, we need to register an identifier that points to the contract address
+        // This tests the "Cannot send to contract" security check
+        vm.prank(user1);
+        userRegistry.registerUser("contract_test", "username", address(smartWallet));
+        
+        // Now try to send to this identifier (should fail with enhanced security)
+        vm.prank(user1);
+        vm.expectRevert("Cannot send to contract");
+        smartWallet.sendPayment("contract_test", sendAmount);
+    }
+
+    function test_RevertWhen_SendPaymentToUnregisteredIdentifier() public {
+        uint256 depositAmount = 1 ether;
+        uint256 sendAmount = 0.3 ether;
+        string memory unregisteredIdentifier = "nonexistent_user";
+        
+        // User1 deposits
+        vm.prank(user1);
+        smartWallet.deposit{value: depositAmount}();
+        
+        // Try to send to unregistered identifier (should fail immediately)
         vm.prank(user1);
         vm.expectRevert("Identifier not registered");
-        smartWallet.sendPayment(nonexistentPhone, sendAmount);
+        smartWallet.sendPayment(unregisteredIdentifier, sendAmount);
+    }
+
+    function test_RevertWhen_SendPaymentToUnregisteredPhone() public {
+        uint256 depositAmount = 1 ether;
+        uint256 sendAmount = 0.3 ether;
+        string memory unregisteredPhone = "+9999999999";
+        
+        // User1 deposits
+        vm.prank(user1);
+        smartWallet.deposit{value: depositAmount}();
+        
+        // Try to send to unregistered phone number (should fail immediately)
+        vm.prank(user1);
+        vm.expectRevert("Identifier not registered");
+        smartWallet.sendPayment(unregisteredPhone, sendAmount);
     }
 
     function test_RevertWhen_WithdrawInsufficientBalance() public {
@@ -267,8 +322,13 @@ contract SmartWalletTest is Test {
         smartWallet.withdraw(withdrawAmount);
     }
 
-    function test_RevertWhen_SendZeroAmount() public {
+    function test_RevertWhen_SendPaymentZeroAmount() public {
+        uint256 depositAmount = 1 ether;
         string memory recipientPhone = "+0987654321";
+        
+        // User1 deposits
+        vm.prank(user1);
+        smartWallet.deposit{value: depositAmount}();
         
         vm.prank(user1);
         vm.expectRevert("Amount must be greater than 0");

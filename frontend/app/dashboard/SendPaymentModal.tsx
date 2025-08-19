@@ -5,19 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import toast from 'react-hot-toast'
-import {
-  X,
-  Send,
-  User,
-  Smartphone,
-  DollarSign,
-  Check,
-  AlertCircle,
-  ArrowRight,
-  Zap
-} from 'lucide-react'
-import { useSendPayment } from '@/hooks/useSmartWallet'
+import { Send, X, ChevronDown, AlertCircle, CheckCircle, Loader2, Smartphone, User, DollarSign, ArrowRight, Zap, Check } from 'lucide-react'
+import { useSendPayment, useUserIdentifiers } from '@/hooks/useSmartWallet'
+import { toast } from 'react-hot-toast'
 
 interface SendPaymentModalProps {
   onClose: () => void
@@ -29,16 +19,16 @@ const sendPaymentSchema = z.object({
     (val) => !isNaN(Number(val)) && Number(val) > 0,
     'Amount must be a valid positive number'
   ),
-  token: z.string().min(1, 'Token is required'),
+  token: z.enum(['MNT', 'USDC', 'USDT']),
   message: z.string().optional()
 })
 
 type SendPaymentForm = z.infer<typeof sendPaymentSchema>
 
 const tokens = [
-  { symbol: 'ETH', name: 'Ethereum', balance: '2.45', icon: '⟠' },
-  { symbol: 'USDC', name: 'USD Coin', balance: '1,250.00', icon: '💎' },
-  { symbol: 'USDT', name: 'Tether USD', balance: '500.00', icon: '💵' }
+  { symbol: 'MNT' as const, name: 'Mantle', balance: '2.45', icon: '⟠' },
+  { symbol: 'USDC' as const, name: 'USD Coin', balance: '1,250.00', icon: '💎' },
+  { symbol: 'USDT' as const, name: 'Tether USD', balance: '500.00', icon: '💵' }
 ]
 
 const recentRecipients = [
@@ -54,6 +44,7 @@ export function SendPaymentModal({ onClose }: SendPaymentModalProps) {
   const [selectedToken, setSelectedToken] = useState(tokens[0])
   const [estimatedGas, setEstimatedGas] = useState('0.0023')
   const { sendPayment, loading: sending } = useSendPayment()
+  const { identifiers } = useUserIdentifiers()
 
   const {
     register,
@@ -65,11 +56,24 @@ export function SendPaymentModal({ onClose }: SendPaymentModalProps) {
     resolver: zodResolver(sendPaymentSchema),
     mode: 'onChange',
     defaultValues: {
-      token: 'ETH'
+      token: 'MNT'
     }
   })
 
   const watchedValues = watch()
+
+  // Check if recipient is user's own identifier
+  const isOwnIdentifier = (recipient: string) => {
+    return identifiers.some(id => id.identifier === recipient)
+  }
+
+  // Enhanced validation for recipient
+  const validateRecipient = (recipient: string) => {
+    if (isOwnIdentifier(recipient)) {
+      return 'Cannot send payment to your own identifier'
+    }
+    return true
+  }
 
   // Update estimated gas when form changes
   useEffect(() => {
@@ -94,6 +98,13 @@ export function SendPaymentModal({ onClose }: SendPaymentModalProps) {
   }
 
   const confirmSend = async () => {
+    // Frontend validation: Prevent self-payments
+    if (isOwnIdentifier(watchedValues.recipient)) {
+      toast.error('Cannot send payment to your own identifier')
+      setStep('form')
+      return
+    }
+
     setStep('sending')
     try {
       await sendPayment(watchedValues.recipient, watchedValues.amount, selectedToken.symbol)
@@ -121,7 +132,7 @@ export function SendPaymentModal({ onClose }: SendPaymentModalProps) {
           className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         />
 
-        {/* Modal */}
+        {/* Main Modal */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -142,8 +153,7 @@ export function SendPaymentModal({ onClose }: SendPaymentModalProps) {
             <button
               onClick={onClose}
               className="p-2 hover:bg-dark-700 rounded-lg transition-colors"
-              aria-label="Close"
-              title="Close"
+              aria-label="Close modal"
             >
               <X className="w-5 h-5 text-gray-400" />
             </button>
@@ -179,6 +189,18 @@ export function SendPaymentModal({ onClose }: SendPaymentModalProps) {
                   </div>
                   {errors.recipient && (
                     <p className="mt-1 text-sm text-red-400">{errors.recipient.message}</p>
+                  )}
+                  
+                  {/* Self-payment warning */}
+                  {watchedValues.recipient && isOwnIdentifier(watchedValues.recipient) && (
+                    <div className="mt-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <AlertCircle className="w-4 h-4 text-red-400" />
+                        <span className="text-sm text-red-400">
+                          Warning: You cannot send payment to your own identifier
+                        </span>
+                      </div>
+                    </div>
                   )}
 
                   {/* Recent Recipients */}

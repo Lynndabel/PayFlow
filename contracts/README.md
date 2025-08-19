@@ -66,3 +66,6 @@ $ cast --help
 ```
 
 
+#forge script script/Deploy.s.sol --rpc-url mantle-sepolia-testnet --broadcast --verify --ffi --priority-gas-price 5000000000
+
+forge script script/Deploy.s.sol --rpc-url mantle-sepolia-testnet --broadcast --verify --ffi --priority-gas-price 5000000000

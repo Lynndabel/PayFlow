@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./SmartWallet.sol";
@@ -117,15 +117,8 @@ contract PaymentProcessor is ReentrancyGuard {
             require(smartWallet.getTokenBalance(msg.sender, token) >= totalAmount, "Insufficient token balance");
         }
         
-        // Process each payment
-        for (uint256 i = 0; i < recipients.length; i++) {
-            if (token == address(0)) {
-                smartWallet.sendPayment(recipients[i], amounts[i]);
-            } else {
-                smartWallet.sendTokenPayment(recipients[i], token, amounts[i]);
-            }
-        }
-        
+        // TODO: Implement with allowance system after security fixes
+        // For now, function exists but does nothing - frontend will show "Coming soon"
         emit BatchPaymentProcessed(msg.sender, totalAmount, recipients.length);
     }
 
@@ -276,13 +269,8 @@ contract PaymentProcessor is ReentrancyGuard {
         }
         
         // Check balance
-        if (schedule.token == address(0)) {
-            require(smartWallet.getBalance(schedule.payer) >= schedule.amount, "Insufficient ETH balance");
-            smartWallet.sendPayment(schedule.recipient, schedule.amount);
-        } else {
-            require(smartWallet.getTokenBalance(schedule.payer, schedule.token) >= schedule.amount, "Insufficient token balance");
-            smartWallet.sendTokenPayment(schedule.recipient, schedule.token, schedule.amount);
-        }
+        // TODO: Implement with allowance system after security fixes
+        // For now, function exists but does nothing - frontend will show "Coming soon"
         
         schedule.executedCount++;
         schedule.nextExecution = block.timestamp + schedule.frequency;

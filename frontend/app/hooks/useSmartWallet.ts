@@ -1,8 +1,9 @@
 // hooks/useSmartWallet.ts
 import { useState, useEffect, useCallback } from 'react'
 import { useAccount } from 'wagmi'
-import { Address, formatEther, parseEther } from 'viem'
+import { Address, formatEther, parseEther, parseUnits, formatUnits } from 'viem'
 import { smartWalletService } from '@/lib/contracts/contracts'
+import { getTokenAddress, getContractAddress } from '@/lib/contracts/address'
 //import { MANTLE_TESTNET_CONFIG } from '@/lib/contract/address'
 import toast from 'react-hot-toast'
 
@@ -59,15 +60,24 @@ export function useSmartWallet() {
 
       try {
         setLoading(true)
+        console.log('🔍 Initializing wallet for user:', userAddress)
+        
         const walletExists = await smartWalletService.hasWallet(userAddress)
+        console.log('📋 Wallet exists check result:', walletExists)
         setHasWallet(walletExists)
 
         if (walletExists) {
           const walletAddr = await smartWalletService.getUserWallet(userAddress)
+          console.log('🏦 Retrieved wallet address:', walletAddr)
+          console.log('🏦 Expected SmartWallet contract:', getContractAddress('SMART_WALLET'))
+          console.log('🏦 Are they the same?', walletAddr === getContractAddress('SMART_WALLET'))
+          
           setSmartWalletAddress(walletAddr)
+        } else {
+          console.log('❌ No wallet found for user')
         }
       } catch (err) {
-        console.error('Failed to initialize wallet:', err)
+        console.error('❌ Failed to initialize wallet:', err)
         setError('Failed to load wallet information')
       } finally {
         setLoading(false)
@@ -83,30 +93,44 @@ export function useSmartWallet() {
 
     try {
       setLoading(true)
+      console.log('🚀 Creating wallet for user:', userAddress)
+      console.log('🚀 Using WalletFactory address:', getContractAddress('WALLET_FACTORY'))
+      
       let txHash: Address
 
       if (identifier && identifierType) {
+        console.log('🚀 Creating wallet with identifier:', identifier, identifierType)
         txHash = await smartWalletService.createWalletWithIdentifier(
           identifier,
           identifierType,
           userAddress
         )
       } else {
+        console.log('🚀 Creating wallet without identifier')
         txHash = await smartWalletService.createWallet(userAddress)
       }
 
+      console.log('🚀 Wallet creation transaction hash:', txHash)
+      console.log('🚀 Waiting for transaction confirmation...')
+
       // Wait for transaction
       await smartWalletService.waitForTransaction(txHash)
+      console.log('🚀 Transaction confirmed!')
       
       // Refresh wallet state
+      console.log('🚀 Getting user wallet address...')
       const walletAddr = await smartWalletService.getUserWallet(userAddress)
+      console.log('🚀 New wallet address:', walletAddr)
+      console.log('🚀 Expected SmartWallet contract:', getContractAddress('SMART_WALLET'))
+      console.log('🚀 Are they the same?', walletAddr === getContractAddress('SMART_WALLET'))
+      
       setSmartWalletAddress(walletAddr)
       setHasWallet(true)
       
       toast.success('Smart wallet created successfully!')
       return walletAddr
     } catch (err) {
-      console.error('Failed to create wallet:', err)
+      console.error('❌ Failed to create wallet:', err)
       toast.error('Failed to create wallet')
       throw err
     } finally {
@@ -352,35 +376,143 @@ export function useSendPayment() {
   const sendPayment = useCallback(async (
     identifier: string,
     amount: string,
-    token: 'MNT' | string = 'MNT'
+    token: 'MNT' | 'USDC' | 'USDT' = 'MNT'
   ) => {
     if (!userAddress || !smartWalletAddress) throw new Error('Wallet not initialized')
 
     try {
       setLoading(true)
-      const amountWei = parseEther(amount)
+      console.log('💸 Starting payment process...')
+      console.log('💸 User address:', userAddress)
+      console.log('💸 Smart wallet address being used:', smartWalletAddress)
+      console.log('💸 Expected SmartWallet contract:', getContractAddress('SMART_WALLET'))
+      console.log('💸 Are they the same?', smartWalletAddress === getContractAddress('SMART_WALLET'))
+      console.log('💸 Payment details:', { identifier, amount, token })
+      
+      // Check if recipient identifier exists and is registered
+      const isIdentifierAvailable = await smartWalletService.isIdentifierAvailable(identifier)
+      if (isIdentifierAvailable) {
+        // If identifier is available, it means it's NOT registered, so we can't send to it
+        throw new Error(`Recipient identifier "${identifier}" is not registered. Please ask them to register first.`)
+      }
       
       let txHash: Address
       
       if (token === 'MNT') {
+        console.log('Sending MNT payment...')
+        const amountWei = parseEther(amount)
+        console.log('Amount in Wei:', amountWei.toString())
+        console.log('Amount in MNT:', amount)
+        
+        // Check MNT balance before sending
+        const balance = await smartWalletService.getBalance(smartWalletAddress, userAddress)
+        console.log('Current MNT balance in user wallet:', formatEther(balance), 'MNT')
+        console.log('Required amount:', formatEther(amountWei), 'MNT')
+        
+        if (balance < amountWei) {
+          throw new Error(`Insufficient MNT balance. You have ${formatEther(balance)} MNT, but trying to send ${amount} MNT`)
+        }
+        
+        console.log('User wallet balance check passed')
+        
+        // Check if recipient exists in UserRegistry
+        try {
+          const recipientWallet = await smartWalletService.getWalletByIdentifier(identifier)
+          console.log('Recipient wallet address:', recipientWallet)
+          
+          if (recipientWallet === '0x0000000000000000000000000000000000000000') {
+            throw new Error(`Recipient identifier "${identifier}" is not registered in UserRegistry`)
+          }
+          
+          // Check if recipient is the same as sender
+          if (recipientWallet.toLowerCase() === userAddress.toLowerCase()) {
+            throw new Error(`Cannot send payment to yourself`)
+          }
+          
+          // Check if recipient is the smart wallet contract itself
+          if (recipientWallet.toLowerCase() === smartWalletAddress.toLowerCase()) {
+            throw new Error(`Cannot send payment to the smart wallet contract`)
+          }
+          
+          console.log('Recipient validation passed')
+        } catch (error) {
+          console.error('Error checking recipient:', error)
+          throw new Error(`Failed to verify recipient: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        }
+        
+        // Check if user has any identifiers to prevent self-payment
+        try {
+          const userIdentifiers = await smartWalletService.getIdentifiersByWallet(userAddress)
+          console.log('User identifiers:', userIdentifiers)
+          
+          if (userIdentifiers.includes(identifier)) {
+            throw new Error(`Cannot send payment to your own identifier "${identifier}"`)
+          }
+          
+          console.log('Self-payment check passed')
+        } catch (error) {
+          console.error('Error checking user identifiers:', error)
+          // Don't throw here, just log the warning
+          console.warn('Could not verify user identifiers, proceeding with caution')
+        }
+        
+        console.log('All pre-flight checks passed, proceeding with payment...')
+        console.log('Using smart wallet address:', smartWalletAddress)
+        console.log('Main smart wallet contract address:', getContractAddress('SMART_WALLET'))
+        console.log('User registry address:', getContractAddress('USER_REGISTRY'))
+        
+        // Use the user's individual smart wallet address, not the main contract
+        // The sendPayment function should read balances from the user's wallet
+        
         txHash = await smartWalletService.sendPayment(
           smartWalletAddress,
           identifier,
           amountWei,
           userAddress
         )
+        console.log('Payment transaction hash:', txHash)
       } else {
-        // TODO: Handle token payments
-        throw new Error('Token payments not implemented yet')
+        // Handle ERC20 token payments
+        console.log(`Sending ${token} payment...`)
+        const tokenAddress = getTokenAddress(token)
+        console.log('Token address:', tokenAddress)
+        
+        // For ERC20 tokens, we need to handle decimals properly
+        const tokenDecimals = token === 'USDC' || token === 'USDT' ? 6 : 18
+        const amountWei = parseUnits(amount, tokenDecimals)
+        console.log('Amount in token units:', amountWei.toString())
+        
+        // Check token balance before sending
+        const tokenBalance = await smartWalletService.getTokenBalance(smartWalletAddress, userAddress, tokenAddress)
+        if (tokenBalance < amountWei) {
+          const formattedBalance = formatUnits(tokenBalance, tokenDecimals)
+          throw new Error(`Insufficient ${token} balance. You have ${formattedBalance} ${token}, but trying to send ${amount} ${token}`)
+        }
+        
+        txHash = await smartWalletService.sendTokenPayment(
+          smartWalletAddress,
+          identifier,
+          tokenAddress,
+          amountWei,
+          userAddress
+        )
+        console.log('Token payment transaction hash:', txHash)
       }
 
+      console.log('Waiting for transaction confirmation...')
       await smartWalletService.waitForTransaction(txHash)
-      toast.success('Payment sent successfully!')
+      console.log('Transaction confirmed!')
+      toast.success(`Payment sent successfully!`)
       
       return txHash
     } catch (err) {
       console.error('Failed to send payment:', err)
-      toast.error('Failed to send payment')
+      console.error('Error details:', {
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : undefined,
+        name: err instanceof Error ? err.name : 'Unknown'
+      })
+      toast.error(`Failed to send payment: ${err instanceof Error ? err.message : 'Unknown error'}`)
       throw err
     } finally {
       setLoading(false)

@@ -375,18 +375,45 @@ export class SmartWalletService {
     amount: bigint,
     account: Address
   ) {
+    console.log('SmartWalletService.sendPayment called with:', {
+      walletAddress,
+      identifier,
+      amount: amount.toString(),
+      account
+    })
+    
     const walletClient = getWalletClient()
     if (!walletClient) throw new Error('Wallet not connected')
 
-    const { request } = await publicClient.simulateContract({
-      address: walletAddress,
-      abi: SmartWalletABI,
-      functionName: 'sendPayment',
-      args: [identifier, amount],
-      account,
-    })
+    try {
+      console.log('Simulating contract call...')
+      console.log('Contract address:', walletAddress)
+      console.log('Function: sendPayment')
+      console.log('Args:', [identifier, amount.toString()])
+      console.log('Account:', account)
+      
+      const { request } = await publicClient.simulateContract({
+        address: walletAddress,
+        abi: SmartWalletABI,
+        functionName: 'sendPayment',
+        args: [identifier, amount],
+        account,
+      })
+      console.log('Contract simulation successful:', request)
 
-    return await walletClient.writeContract(request)
+      console.log('Writing contract transaction...')
+      const txHash = await walletClient.writeContract(request)
+      console.log('Transaction written successfully:', txHash)
+      
+      return txHash
+    } catch (error) {
+      console.error('Error in sendPayment:', error)
+      if (error instanceof Error) {
+        console.error('Error message:', error.message)
+        console.error('Error name:', error.name)
+      }
+      throw error
+    }
   }
 
   async sendTokenPayment(
@@ -396,18 +423,37 @@ export class SmartWalletService {
     amount: bigint,
     account: Address
   ) {
+    console.log('SmartWalletService.sendTokenPayment called with:', {
+      walletAddress,
+      identifier,
+      tokenAddress,
+      amount: amount.toString(),
+      account
+    })
+    
     const walletClient = getWalletClient()
     if (!walletClient) throw new Error('Wallet not connected')
 
-    const { request } = await publicClient.simulateContract({
-      address: walletAddress,
-      abi: SmartWalletABI,
-      functionName: 'sendTokenPayment',
-      args: [identifier, tokenAddress, amount],
-      account,
-    })
+    try {
+      console.log('Simulating token payment contract call...')
+      const { request } = await publicClient.simulateContract({
+        address: walletAddress,
+        abi: SmartWalletABI,
+        functionName: 'sendTokenPayment',
+        args: [identifier, tokenAddress, amount],
+        account,
+      })
+      console.log('Token payment contract simulation successful:', request)
 
-    return await walletClient.writeContract(request)
+      console.log('Writing token payment contract transaction...')
+      const txHash = await walletClient.writeContract(request)
+      console.log('Token payment transaction written successfully:', txHash)
+      
+      return txHash
+    } catch (error) {
+      console.error('Error in sendTokenPayment:', error)
+      throw error
+    }
   }
 
   async deposit(walletAddress: Address, amount: bigint, account: Address) {

@@ -18,10 +18,12 @@ const navigation = [
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
   const { isConnected } = useAccount()
 
   useEffect(() => {
+    setMounted(true)
     const handleScroll = () => {
       setScrolled(window.scrollY > 20)
     }
@@ -30,7 +32,7 @@ export function Navbar() {
   }, [])
 
   const filteredNavigation = navigation.filter(item => 
-    !item.protected || (item.protected && isConnected)
+    !item.protected || (item.protected && mounted && isConnected)
   )
 
   return (
@@ -86,7 +88,7 @@ export function Navbar() {
           {/* Connect Button & Mobile Menu */}
           <div className="flex items-center space-x-4">
             <div className="hidden sm:flex items-center space-x-2">
-              <ConnectButton accountStatus="avatar" chainStatus="icon" showBalance={false} />
+              {mounted && <ConnectButton accountStatus="avatar" chainStatus="icon" showBalance={false} />}
             </div>
 
             {/* Mobile menu button */}

@@ -14,7 +14,7 @@ type Addresses = {
 // let DYNAMIC_ADDRESSES: Partial<Addresses> | undefined
 // try {
 //   // eslint-disable-next-line @typescript-eslint/no-var-requires
-//   const broadcast = require('../../../../contracts/broadcast/Deploy.s.sol/5003/run-1754611209.json')
+//   const broadcast = require('../../../../contracts/broadcast/Deploy.s.sol/5003/run-latest.json')
 //   const txs: Array<{ contractName?: string; contractAddress?: string }> = broadcast?.transactions || []
 //   const map = new Map<string, string>()
 //   for (const tx of txs) {
@@ -34,11 +34,11 @@ type Addresses = {
 // }
 
 const STATIC_ADDRESSES: Addresses = {
-  USER_REGISTRY: '0x88bcb19a8984f6877996f6dbbcfba8df01a76b25' as `0x${string}`,
-  SMART_WALLET: '0x990ec214cadf9eba4809c7277414a5e179066ced' as `0x${string}`,
-  WALLET_FACTORY: '0x7900f6ddb4363d104147077eba8012e36ebd69e1' as `0x${string}`,
-  SMART_WALLET_IMPLEMENTATION: '0x990ec214cadf9eba4809c7277414a5e179066ced' as `0x${string}`,
-  PAYMENT_PROCESSOR: '0x56705c4c5c455a6aa4a0d0ace5c561ac71727e68' as `0x${string}`,
+  USER_REGISTRY: '0xb35DafC1FddA3Abe74786151318b5F5441b213D1' as `0x${string}`,
+  SMART_WALLET: '0xC54fa7206d77886E41F600AFadF5bF01DC8caCe8' as `0x${string}`,
+  WALLET_FACTORY: '0x7E4Ea4F7D4fA6F71cAb1425518Fd8031C7893EA4' as `0x${string}`,
+  SMART_WALLET_IMPLEMENTATION: '0xeC4483A748c9E391CaaB9E5fFBd455A839Bc09c6' as `0x${string}`,
+  PAYMENT_PROCESSOR: '0x9C2D297672c909Bac8eC5FBf343DB5AeF2209203' as `0x${string}`,
 }
 
 export const CONTRACT_ADDRESSES: Addresses = STATIC_ADDRESSES
@@ -82,8 +82,8 @@ export const CONTRACT_ADDRESSES: Addresses = STATIC_ADDRESSES
   // Contract deployment info
   export const DEPLOYMENT_INFO = {
     network: 'mantle-sepolia-testnet',
-    deployedAt: '2024-01-01T00:00:00Z',
-    deployer: '0x0000000000000000000000000000000000000000',
+    deployedAt: '2025-08-15T12:14:00Z',
+    deployer: '0x8B54d7BAB53a61F4923E00C9f1CCfd999CC92d33',
     version: '1.0.0',
   } as const
   

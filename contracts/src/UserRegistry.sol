@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title UserRegistry
@@ -46,7 +46,7 @@ contract UserRegistry is Ownable, ReentrancyGuard {
         _;
     }
 
-    constructor() {}
+    constructor() Ownable(msg.sender) {}
 
     /**
      * @dev Register a phone number or username to a wallet address
@@ -60,9 +60,12 @@ contract UserRegistry is Ownable, ReentrancyGuard {
         address wallet
     ) external validIdentifier(identifier) identifierAvailable(identifier) nonReentrant {
         require(wallet != address(0), "Invalid wallet address");
+        bytes32 identifierTypeHash = keccak256(bytes(identifierType));
+        bytes32 phoneHash = keccak256(bytes("phone"));
+        bytes32 usernameHash = keccak256(bytes("username"));
+        
         require(
-            keccak256(bytes(identifierType)) == keccak256(bytes("phone")) || 
-            keccak256(bytes(identifierType)) == keccak256(bytes("username")),
+            identifierTypeHash == phoneHash || identifierTypeHash == usernameHash,
             "Invalid identifier type"
         );
         require(
@@ -71,13 +74,13 @@ contract UserRegistry is Ownable, ReentrancyGuard {
         );
 
         // Validate phone number format (basic validation)
-        if (keccak256(bytes(identifierType)) == keccak256(bytes("phone"))) {
+        if (identifierTypeHash == phoneHash) {
             require(_isValidPhoneNumber(identifier), "Invalid phone number format");
             require(!walletHasPhone[wallet], "Phone already linked");
         }
 
         // Validate username format
-        if (keccak256(bytes(identifierType)) == keccak256(bytes("username"))) {
+        if (identifierTypeHash == usernameHash) {
             require(_isValidUsername(identifier), "Invalid username format");
             require(!walletHasUsername[wallet], "Username already linked");
         }
@@ -91,9 +94,9 @@ contract UserRegistry is Ownable, ReentrancyGuard {
         });
 
         walletToIdentifiers[wallet].push(identifier);
-        if (keccak256(bytes(identifierType)) == keccak256(bytes("phone"))) {
+        if (identifierTypeHash == phoneHash) {
             walletHasPhone[wallet] = true;
-        } else {
+        } else if (identifierTypeHash == usernameHash) {
             walletHasUsername[wallet] = true;
         }
 
@@ -119,10 +122,15 @@ contract UserRegistry is Ownable, ReentrancyGuard {
         walletToIdentifiers[newWallet].push(identifier);
 
         // Update type flags for both wallets
-        if (keccak256(bytes(user.identifierType)) == keccak256(bytes("phone"))) {
+        bytes32 identifierTypeHash = keccak256(bytes(user.identifierType));
+        bytes32 phoneHash = keccak256(bytes("phone"));
+        
+        if (identifierTypeHash == phoneHash) {
+            require(!walletHasPhone[newWallet], "New wallet already has phone");
             walletHasPhone[oldWallet] = false;
             walletHasPhone[newWallet] = true;
-        } else {
+        } else if (identifierTypeHash == keccak256(bytes("username"))) {
+            require(!walletHasUsername[newWallet], "New wallet already has username");
             walletHasUsername[oldWallet] = false;
             walletHasUsername[newWallet] = true;
         }
@@ -145,9 +153,10 @@ contract UserRegistry is Ownable, ReentrancyGuard {
         _removeIdentifierFromWallet(wallet, identifier);
 
         // Clear type flag
-        if (keccak256(bytes(user.identifierType)) == keccak256(bytes("phone"))) {
+        bytes32 identifierTypeHash = keccak256(bytes(user.identifierType));
+        if (identifierTypeHash == keccak256(bytes("phone"))) {
             walletHasPhone[wallet] = false;
-        } else if (keccak256(bytes(user.identifierType)) == keccak256(bytes("username"))) {
+        } else if (identifierTypeHash == keccak256(bytes("username"))) {
             walletHasUsername[wallet] = false;
         }
 
