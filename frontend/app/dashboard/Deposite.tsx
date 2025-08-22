@@ -5,7 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAccount } from 'wagmi'
 import { useSmartWallet, useWalletBalances } from '../hooks/useSmartWallet'
 import { smartWalletService } from '@/lib/contracts/contracts'
+import { MANTLE_TESTNET_CONFIG, getExplorerAddressUrl } from '@/lib/contracts/address'
 import { parseEther } from 'viem'
+import { QRCodeSVG } from 'qrcode.react'
 import { 
   X, 
   ArrowDownToLine, 
@@ -29,19 +31,35 @@ export function DepositModal({ onClose }: DepositModalProps) {
   const { smartWalletAddress } = useSmartWallet()
   const { refreshBalances } = useWalletBalances()
   const [depositMethod, setDepositMethod] = useState<'wallet' | 'fiat' | 'bridge'>('wallet')
-  const [showQR, setShowQR] = useState(false)
+  const [showQREoa, setShowQREoa] = useState(false)
+  const [showQRSW, setShowQRSW] = useState(false)
   const [amount, setAmount] = useState('')
 
-  const copyAddress = () => {
+  const copyEoaAddress = () => {
     if (address) {
       navigator.clipboard.writeText(address)
-      toast.success('Wallet address copied!')
+      toast.success('EOA address copied!')
     }
   }
 
-  const openExplorer = () => {
+  const copySmartWallet = () => {
+    if (smartWalletAddress) {
+      navigator.clipboard.writeText(smartWalletAddress)
+      toast.success('Smart wallet address copied!')
+    } else {
+      toast.error('Create your Smart Wallet first')
+    }
+  }
+
+  const openEoaInExplorer = () => {
     if (address) {
-      window.open(`https://explorer-holesky.morphl2.io/address/${address}`, '_blank')
+      window.open(getExplorerAddressUrl(address, MANTLE_TESTNET_CONFIG.id), '_blank')
+    }
+  }
+
+  const openSmartWalletInExplorer = () => {
+    if (smartWalletAddress) {
+      window.open(getExplorerAddressUrl(smartWalletAddress, MANTLE_TESTNET_CONFIG.id), '_blank')
     }
   }
 
@@ -94,7 +112,7 @@ export function DepositModal({ onClose }: DepositModalProps) {
               </div>
               <div>
                 <h2 className="text-xl font-bold text-white">Deposit Funds</h2>
-                <p className="text-sm text-gray-400">Add money to your smart wallet</p>
+                <p className="text-sm text-gray-400">Add MNT or tokens to your smart wallet</p>
               </div>
             </div>
             <button
@@ -196,7 +214,8 @@ export function DepositModal({ onClose }: DepositModalProps) {
                   <div>
                     <h4 className="font-semibold text-yellow-300 mb-1">Important Notice</h4>
                     <p className="text-sm text-yellow-200/80">
-                      Only send funds on Morph Testnet. Sending from other networks will result in permanent loss.
+                      Only send funds on Mantle Sepolia Testnet (Chain ID {MANTLE_TESTNET_CONFIG.id}).
+                      Sending from other networks may result in loss of funds.
                     </p>
                   </div>
                 </div>
@@ -207,38 +226,38 @@ export function DepositModal({ onClose }: DepositModalProps) {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-400">Network</span>
-                      <span className="text-white">Morph Holesky Testnet</span>
+                      <span className="text-white">{MANTLE_TESTNET_CONFIG.name}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Chain ID</span>
-                      <span className="text-white">2810</span>
+                      <span className="text-white">{MANTLE_TESTNET_CONFIG.id}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">RPC URL</span>
-                      <span className="text-white text-xs">rpc-quicknode-holesky.morphl2.io</span>
+                      <span className="text-white text-xs">{MANTLE_TESTNET_CONFIG.rpcUrls.default.http[0]}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Wallet Address + Direct Deposit */}
+                {/* EOA Address */}
                 <div className="bg-dark-700/30 rounded-xl p-4 border border-dark-600/50">
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-semibold text-white">Your Wallet Address</h4>
+                    <h4 className="font-semibold text-white">Your EOA Address</h4>
                     <div className="flex items-center space-x-2">
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        onClick={() => setShowQR(!showQR)}
+                        onClick={() => setShowQREoa(!showQREoa)}
                         className="p-2 bg-dark-600/50 hover:bg-dark-500/50 border border-dark-600 rounded-lg transition-colors"
-                      aria-label="Show QR code"
-                      title="Show QR code"
-                    >
+                        aria-label="Show QR code"
+                        title="Show QR code"
+                      >
                         <QrCode className="w-4 h-4 text-gray-400" />
                       </motion.button>
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        onClick={copyAddress}
+                        onClick={copyEoaAddress}
                         className="p-2 bg-dark-600/50 hover:bg-dark-500/50 border border-dark-600 rounded-lg transition-colors"
                         aria-label="Copy wallet address"
                         title="Copy address"
@@ -248,7 +267,7 @@ export function DepositModal({ onClose }: DepositModalProps) {
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        onClick={openExplorer}
+                        onClick={openEoaInExplorer}
                         className="p-2 bg-dark-600/50 hover:bg-dark-500/50 border border-dark-600 rounded-lg transition-colors"
                         aria-label="Open in explorer"
                         title="Open in explorer"
@@ -264,20 +283,84 @@ export function DepositModal({ onClose }: DepositModalProps) {
                     </code>
                   </div>
 
-                  {/* QR Code Placeholder */}
+                  {/* QR Code */}
                   <AnimatePresence>
-                    {showQR && (
+                    {showQREoa && address && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
                         className="mt-4 text-center"
                       >
-                        <div className="w-48 h-48 bg-white rounded-lg mx-auto flex items-center justify-center">
-                          <span className="text-dark-900 font-medium">QR Code</span>
+                        <div className="w-full flex items-center justify-center">
+                          <QRCodeSVG value={address} size={192} bgColor="#ffffff" fgColor="#0a0a0a" includeMargin={false} />
                         </div>
                         <p className="text-sm text-gray-400 mt-2">
                           Scan this QR code with your wallet app
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Smart Wallet Address */}
+                <div className="bg-dark-700/30 rounded-xl p-4 border border-dark-600/50">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold text-white">Your Smart Wallet Address</h4>
+                    <div className="flex items-center space-x-2">
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setShowQRSW(!showQRSW)}
+                        className="p-2 bg-dark-600/50 hover:bg-dark-500/50 border border-dark-600 rounded-lg transition-colors"
+                        aria-label="Show QR code"
+                        title="Show QR code"
+                      >
+                        <QrCode className="w-4 h-4 text-gray-400" />
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={copySmartWallet}
+                        className="p-2 bg-dark-600/50 hover:bg-dark-500/50 border border-dark-600 rounded-lg transition-colors"
+                        aria-label="Copy smart wallet address"
+                        title="Copy smart wallet address"
+                      >
+                        <Copy className="w-4 h-4 text-gray-400" />
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={openSmartWalletInExplorer}
+                        className="p-2 bg-dark-600/50 hover:bg-dark-500/50 border border-dark-600 rounded-lg transition-colors"
+                        aria-label="Open in explorer"
+                        title="Open in explorer"
+                      >
+                        <ExternalLink className="w-4 h-4 text-gray-400" />
+                      </motion.button>
+                    </div>
+                  </div>
+
+                  <div className="bg-dark-800/50 rounded-lg p-3 border border-dark-600/30">
+                    <code className="text-sm text-white font-mono break-all">
+                      {smartWalletAddress || 'Create your Smart Wallet first'}
+                    </code>
+                  </div>
+
+                  {/* QR Code */}
+                  <AnimatePresence>
+                    {showQRSW && smartWalletAddress && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-4 text-center"
+                      >
+                        <div className="w-full flex items-center justify-center">
+                          <QRCodeSVG value={smartWalletAddress} size={192} bgColor="#ffffff" fgColor="#0a0a0a" includeMargin={false} />
+                        </div>
+                        <p className="text-sm text-gray-400 mt-2">
+                          Scan to fund your smart wallet directly
                         </p>
                       </motion.div>
                     )}
@@ -294,7 +377,7 @@ export function DepositModal({ onClose }: DepositModalProps) {
                       step="0.0001"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
-                      placeholder="Amount in ETH"
+                      placeholder={`Amount in ${MANTLE_TESTNET_CONFIG.nativeCurrency.symbol}`}
                       className="flex-1 bg-dark-800/50 border border-dark-600 rounded-lg px-3 py-2 text-sm text-white"
                     />
                     <button
@@ -331,13 +414,13 @@ export function DepositModal({ onClose }: DepositModalProps) {
                       <span className="flex-shrink-0 w-5 h-5 bg-primary-500/20 text-primary-300 rounded-full flex items-center justify-center text-xs font-bold">
                         3
                       </span>
-                      <span>Make sure you're on Morph Testnet</span>
+                      <span>Make sure you are on Mantle Sepolia Testnet</span>
                     </li>
                     <li className="flex items-start space-x-2">
                       <span className="flex-shrink-0 w-5 h-5 bg-primary-500/20 text-primary-300 rounded-full flex items-center justify-center text-xs font-bold">
                         4
                       </span>
-                      <span>Send ETH or tokens to this address</span>
+                      <span>Send MNT or supported tokens to this address</span>
                     </li>
                   </ol>
                 </div>
@@ -347,7 +430,7 @@ export function DepositModal({ onClose }: DepositModalProps) {
                   <h4 className="font-semibold text-white mb-3">Supported Tokens</h4>
                   <div className="grid grid-cols-3 gap-3">
                     {[
-                      { symbol: 'ETH', name: 'Ethereum', icon: '⟠' },
+                      { symbol: 'MNT', name: 'Mantle', icon: '⟠' },
                       { symbol: 'USDC', name: 'USD Coin', icon: '💎' },
                       { symbol: 'USDT', name: 'Tether', icon: '💵' }
                     ].map((token) => (
