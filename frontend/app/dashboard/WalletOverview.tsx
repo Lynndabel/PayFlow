@@ -395,7 +395,7 @@ export function WalletOverview({ onDeposit }: WalletOverviewProps) {
         <div className="flex items-center justify-center space-x-2">
           {balanceVisible ? (
             <h3 className="text-4xl font-bold bg-gradient-to-r from-gold-400 to-gold-500 bg-clip-text text-transparent">
-              ${totalUsdValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              {`$${totalUsdValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
             </h3>
           ) : (
             <h3 className="text-4xl font-bold text-gray-500">••••••</h3>
@@ -446,8 +446,8 @@ export function WalletOverview({ onDeposit }: WalletOverviewProps) {
                     <p className="font-semibold text-white">
                       {token.balance} {token.symbol}
                     </p>
-                    <div className="flex items-center space-x-2">
-                      <p className="text-sm text-gray-400">${token.usdValue}</p>
+                    <div className="flex items-center space-x-2 justify-end">
+                      <p className="text-sm text-gray-400">{`$${token.usdValue}`}</p>
                       <span className={`text-sm ${
                         token.changeType === 'positive' ? 'text-accent-400' : 'text-red-400'
                       }`}>

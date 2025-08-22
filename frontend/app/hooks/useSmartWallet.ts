@@ -3,6 +3,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAccount } from 'wagmi'
 import { Address, formatEther, parseEther, parseUnits, formatUnits } from 'viem'
 import { smartWalletService } from '@/lib/contracts/contracts'
+import { getPricesWithChange, formatFiat } from '@/lib/prices/priceService'
+
 import { getTokenAddress, getContractAddress } from '@/lib/contracts/address'
 //import { MANTLE_TESTNET_CONFIG } from '@/lib/contract/address'
 import toast from 'react-hot-toast'
@@ -17,6 +19,9 @@ export interface TokenBalance {
   changeType: 'positive' | 'negative'
   color: string
   address?: Address
+  valueInEth?: string
+  unitPriceUsd?: string
+  unitPriceEth?: string
 }
 
 export interface Transaction {
@@ -172,6 +177,54 @@ export function useWalletBalances() {
   const [balances, setBalances] = useState<TokenBalance[]>([])
   const [totalUsdValue, setTotalUsdValue] = useState(0)
   const [loading, setLoading] = useState(false)
+  
+  // --- Client-side 1m change helpers ---
+  type Sample = { t: number; p: number }
+  const SAMPLES_KEY = 'price_samples_mantle'
+
+  const loadSamples = useCallback((): Sample[] => {
+    try {
+      const raw = window.localStorage.getItem(SAMPLES_KEY)
+      if (!raw) return []
+      const arr = JSON.parse(raw) as Sample[]
+      return Array.isArray(arr) ? arr : []
+    } catch {
+      return []
+    }
+  }, [])
+
+  const saveSamples = useCallback((samples: Sample[]) => {
+    try {
+      window.localStorage.setItem(SAMPLES_KEY, JSON.stringify(samples))
+    } catch {
+      // ignore quota errors
+    }
+  }, [])
+
+  const recordSample = useCallback((price: number) => {
+    const now = Date.now()
+    const cutoff = now - 10 * 60_000 // keep last 10 minutes
+    const prev = loadSamples().filter(s => s.t >= cutoff)
+    prev.push({ t: now, p: price })
+    // cap length to avoid excessive storage
+    const trimmed = prev.slice(-120) // ~30min at 15s
+    saveSamples(trimmed)
+  }, [loadSamples, saveSamples])
+
+  const computePct1m = useCallback((current: number): number | undefined => {
+    const now = Date.now()
+    const samples = loadSamples()
+    if (samples.length === 0) return undefined
+    const targetTs = now - 60_000
+    // find the latest sample at or before targetTs
+    const candidate = [...samples].reverse().find(s => s.t <= targetTs)
+    const past = candidate ?? samples[0]
+    if (!past) return undefined
+    const age = now - past.t
+    if (age < 45_000) return undefined // not enough history (~<45s)
+    if (past.p === 0) return undefined
+    return ((current - past.p) / past.p) * 100
+  }, [loadSamples])
 
   const refreshBalances = useCallback(async () => {
     if (!userAddress || !smartWalletAddress) return
@@ -183,26 +236,34 @@ export function useWalletBalances() {
       const ethBalance = await smartWalletService.getBalance(smartWalletAddress, userAddress)
       const ethBalanceFormatted = formatEther(ethBalance)
       
-      // TODO: Add token addresses for your deployment
-      // Get USDC balance (example)
-      // const usdcBalance = await smartWalletService.getTokenBalance(
-      //   smartWalletAddress, 
-      //   userAddress, 
-      //   '0x...' // USDC token address
-      // )
+      // Live prices via DefiLlama (USD quotes + 24h change)
+      const prices = await getPricesWithChange()
+      const mntUsd = prices.usd.mantle
+      const ethUsd = prices.usd.ethereum
+      const mntPerEth = mntUsd / ethUsd
 
-      // Mock prices for now - integrate with price API later
-      const ethPrice = 2450.0
-      
+      // record MNT snapshot for client-side 1m change
+      recordSample(mntUsd)
+
+      const pct1m = computePct1m(mntUsd)
+
+      const bal = parseFloat(ethBalanceFormatted)
       const newBalances: TokenBalance[] = [
         {
           symbol: 'MNT',
           name: 'Mantle',
-          balance: parseFloat(ethBalanceFormatted).toFixed(4),
-          usdValue: (parseFloat(ethBalanceFormatted) * ethPrice).toFixed(2),
-          change: '+12.5%',
-          changeType: 'positive',
-          color: 'from-blue-500 to-blue-600'
+          balance: bal.toFixed(4),
+          usdValue: formatFiat(bal * mntUsd),
+          change: (() => {
+            const v = pct1m ?? prices.change24hPct.mantle
+            const sign = v >= 0 ? '+' : ''
+            return `${sign}${v.toFixed(1)}%`
+          })(),
+          changeType: (pct1m ?? prices.change24hPct.mantle) >= 0 ? 'positive' : 'negative',
+          color: 'from-blue-500 to-blue-600',
+          valueInEth: (bal * mntPerEth).toFixed(6),
+          unitPriceUsd: formatFiat(mntUsd),
+          unitPriceEth: (mntPerEth).toFixed(6),
         },
         // Add more tokens as needed
       ]
@@ -217,10 +278,20 @@ export function useWalletBalances() {
     } finally {
       setLoading(false)
     }
-  }, [userAddress, smartWalletAddress])
+  }, [userAddress, smartWalletAddress, computePct1m, recordSample])
 
   useEffect(() => {
     refreshBalances()
+    const handler = () => refreshBalances()
+    window.addEventListener('balances:refresh', handler)
+    // 15s polling for smoother 1m change
+    const id = window.setInterval(() => {
+      refreshBalances()
+    }, 15_000)
+    return () => {
+      window.removeEventListener('balances:refresh', handler)
+      window.clearInterval(id)
+    }
   }, [refreshBalances])
 
   return {
@@ -520,6 +591,7 @@ export function useSendPayment() {
       console.log('Waiting for transaction confirmation...')
       await smartWalletService.waitForTransaction(txHash)
       console.log('Transaction confirmed!')
+      window.dispatchEvent(new Event('balances:refresh'))
       toast.success(`Payment sent successfully!`)
       
       return txHash

@@ -72,11 +72,13 @@ export const CONTRACT_ADDRESSES: Addresses = STATIC_ADDRESSES
     testnet: true,
   }
   
-  // Token addresses (add as needed)
+  // Token addresses on Mantle Sepolia
+  // TODO: Populate with verified bridged token addresses once confirmed on Mantle Sepolia explorer
+  // Example:
+  // USDC: '0x...' as `0x${string}`,
+  // USDT: '0x...' as `0x${string}`,
+  // DAI:  '0x...' as `0x${string}`,
   export const TOKEN_ADDRESSES = {
-    USDC: '0x07865c6E87B9F70255377e024ace6630C1Eaa37F' as `0x${string}`,
-    USDT: '0x509Ee0d083DdF8AC028f2a56731412edD63223B9' as `0x${string}`,
-    DAI: '0x11fE4B6AE13d2a6055C8D9cF65c55bac32B5d844' as `0x${string}`,
   } as const
   
   // Contract deployment info

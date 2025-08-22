@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAccount } from 'wagmi'
 import { Address, formatEther, parseEther, parseUnits } from 'viem'
 import { smartWalletService } from '@/lib/contracts/contracts'
+import { getPrices, formatFiat } from '@/lib/prices/priceService'
 import toast from 'react-hot-toast'
 import { getTokenAddress } from '@/lib/contracts/address'
 
@@ -16,6 +17,57 @@ export interface TokenBalance {
   changeType: 'positive' | 'negative'
   color: string
   address?: Address
+  // Optional extra valuations
+  valueInEth?: string
+  unitPriceUsd?: string
+  unitPriceEth?: string
+}
+
+// Hook for depositing/withdrawing funds that also refreshes balances after confirmations
+export function useWalletFunds() {
+  const { address: userAddress } = useAccount()
+  const { smartWalletAddress } = useSmartWallet()
+  const [loading, setLoading] = useState(false)
+
+  const deposit = useCallback(async (amountEth: string) => {
+    if (!userAddress || !smartWalletAddress) throw new Error('Wallet not initialized')
+    try {
+      setLoading(true)
+      const amountWei = parseEther(amountEth)
+      const txHash = await smartWalletService.deposit(smartWalletAddress, amountWei, userAddress)
+      await smartWalletService.waitForTransaction(txHash)
+      window.dispatchEvent(new Event('balances:refresh'))
+      toast.success('Deposit successful!')
+      return txHash
+    } catch (err) {
+      console.error('Failed to deposit:', err)
+      toast.error('Failed to deposit')
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [userAddress, smartWalletAddress])
+
+  const withdraw = useCallback(async (amountEth: string) => {
+    if (!userAddress || !smartWalletAddress) throw new Error('Wallet not initialized')
+    try {
+      setLoading(true)
+      const amountWei = parseEther(amountEth)
+      const txHash = await smartWalletService.withdraw(smartWalletAddress, amountWei, userAddress)
+      await smartWalletService.waitForTransaction(txHash)
+      window.dispatchEvent(new Event('balances:refresh'))
+      toast.success('Withdrawal successful!')
+      return txHash
+    } catch (err) {
+      console.error('Failed to withdraw:', err)
+      toast.error('Failed to withdraw')
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [userAddress, smartWalletAddress])
+
+  return { deposit, withdraw, loading }
 }
 
 export interface Transaction {
@@ -149,20 +201,27 @@ export function useWalletBalances() {
       //   '0x...' // USDC token address
       // )
 
-      // Mock prices for now - integrate with price API later
-      const ethPrice = 2450.0
+      // Live prices via DefiLlama (USD quotes)
+      const prices = await getPrices()
+      const mntUsd = prices.usd.mantle
+      const ethUsd = prices.usd.ethereum
+      const mntPerEth = mntUsd / ethUsd
       
+      const bal = parseFloat(ethBalanceFormatted)
       const newBalances: TokenBalance[] = [
         {
-          symbol: 'ETH',
-          name: 'Ethereum',
-          balance: parseFloat(ethBalanceFormatted).toFixed(4),
-          usdValue: (parseFloat(ethBalanceFormatted) * ethPrice).toFixed(2),
-          change: '+12.5%',
+          symbol: 'MNT',
+          name: 'Mantle',
+          balance: bal.toFixed(4),
+          usdValue: formatFiat(bal * mntUsd),
+          change: '+0.0%', // placeholder; hook can be extended with 24h changes later
           changeType: 'positive',
-          color: 'from-blue-500 to-blue-600'
+          color: 'from-blue-500 to-blue-600',
+          valueInEth: (bal * mntPerEth).toFixed(6),
+          unitPriceUsd: formatFiat(mntUsd),
+          unitPriceEth: (mntPerEth).toFixed(6),
         },
-        // Add more tokens as needed
+        // TODO: add ERC-20 tokens with their own live pricing as needed
       ]
       
       setBalances(newBalances)
@@ -179,6 +238,13 @@ export function useWalletBalances() {
 
   useEffect(() => {
     refreshBalances()
+
+    // Listen for global refresh events triggered after tx confirmations
+    const handler = () => {
+      refreshBalances()
+    }
+    window.addEventListener('balances:refresh', handler)
+    return () => window.removeEventListener('balances:refresh', handler)
   }, [refreshBalances])
 
   return {
@@ -395,6 +461,8 @@ export function useSendPayment() {
       }
 
       await smartWalletService.waitForTransaction(txHash)
+      // Trigger balances refresh for all listeners (wallet overview, etc.)
+      window.dispatchEvent(new Event('balances:refresh'))
       toast.success('Payment sent successfully!')
       
       return txHash
