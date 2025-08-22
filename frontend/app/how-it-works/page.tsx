@@ -215,7 +215,7 @@ export default function HowItWorks() {
             </motion.div>
           </div>
 
-          {/* Demo Video Placeholder */}
+          {/* Demo Video */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
@@ -223,15 +223,14 @@ export default function HowItWorks() {
             className="relative max-w-4xl mx-auto mb-20"
           >
             <div className="relative bg-gradient-to-r from-dark-800 to-dark-700 rounded-3xl p-2 shadow-2xl">
-              <div className="bg-dark-900 rounded-2xl aspect-video flex items-center justify-center">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-gold-600 to-gold-700 hover:from-gold-500 hover:to-gold-600 text-white font-semibold rounded-xl shadow-lg transition-all duration-200"
-                >
-                  <PlayCircle className="w-6 h-6" />
-                  <span>Watch Demo Video</span>
-                </motion.button>
+              <div className="bg-dark-900 rounded-2xl aspect-video overflow-hidden">
+                <iframe
+                  src="https://www.loom.com/embed/aca09b6274554307b2e6c24824059a3d?sid=dc892ca1-f919-4100-a11b-b55652a71352"
+                  title="PayFlow Demo"
+                  className="w-full h-full rounded-2xl"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
               </div>
             </div>
           </motion.div>

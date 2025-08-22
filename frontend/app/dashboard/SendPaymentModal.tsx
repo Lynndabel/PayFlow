@@ -1,4 +1,4 @@
-'use client'
+"use client"
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -8,6 +8,8 @@ import { z } from 'zod'
 import { Send, X, ChevronDown, AlertCircle, CheckCircle, Loader2, Smartphone, User, DollarSign, ArrowRight, Zap, Check } from 'lucide-react'
 import { useSendPayment, useUserIdentifiers, useWalletBalances } from '@/hooks/useSmartWallet'
 import { toast } from 'react-hot-toast'
+import { Button } from '@/components/ui/Button'
+import Spinner from '@/components/ui/Spinner'
 
 interface SendPaymentModalProps {
   onClose: () => void
@@ -322,14 +324,10 @@ export function SendPaymentModal({ onClose }: SendPaymentModalProps) {
                 </div>
 
                 {/* Submit */}
-                <button
-                  type="submit"
-                  disabled={!isValid}
-                  className="w-full flex items-center justify-center space-x-2 py-4 bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-500 hover:to-secondary-500 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold rounded-xl transition-all duration-200 disabled:cursor-not-allowed"
-                >
-                  <span>Review Payment</span>
+                <Button type="submit" disabled={!isValid}>
+                  <span className="mr-2">Review Payment</span>
                   <ArrowRight className="w-5 h-5" />
-                </button>
+                </Button>
               </form>
             )}
 
@@ -381,18 +379,12 @@ export function SendPaymentModal({ onClose }: SendPaymentModalProps) {
                 </div>
 
                 <div className="flex space-x-3">
-                  <button
-                    onClick={() => setStep('form')}
-                    className="flex-1 py-3 bg-dark-700/50 hover:bg-dark-600/50 border border-dark-600 text-white font-medium rounded-lg transition-colors"
-                  >
+                  <Button variant="secondary" fullWidth={true} onClick={() => setStep('form')}>
                     Back
-                  </button>
-                  <button
-                    onClick={confirmSend}
-                    className="flex-1 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-500 hover:to-secondary-500 text-white font-semibold rounded-lg transition-all duration-200"
-                  >
+                  </Button>
+                  <Button onClick={confirmSend} loading={sending}>
                     Send Payment
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -412,6 +404,8 @@ export function SendPaymentModal({ onClose }: SendPaymentModalProps) {
                     transition={{ duration: 3 }}
                   />
                 </div>
+                {/* aria-live for async status */}
+                <div aria-live="polite" className="sr-only">Transaction is being sent</div>
               </div>
             )}
 
@@ -424,12 +418,7 @@ export function SendPaymentModal({ onClose }: SendPaymentModalProps) {
                 <p className="text-gray-400 mb-6">
                   Your payment of {watchedValues.amount} {selectedToken.symbol} has been sent to {watchedValues.recipient}
                 </p>
-                <button
-                  onClick={onClose}
-                  className="w-full py-3 bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-500 hover:to-secondary-500 text-white font-semibold rounded-lg transition-all duration-200"
-                >
-                  Done
-                </button>
+                <Button onClick={onClose}>Done</Button>
               </div>
             )}
           </div>

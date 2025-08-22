@@ -8,6 +8,7 @@ import { smartWalletService } from '@/lib/contracts/contracts'
 import { parseEther, Address, formatEther, isAddress } from 'viem'
 import { smartWalletService as _service } from '@/lib/contracts/contracts'
 import toast from 'react-hot-toast'
+import { Button } from '@/components/ui/Button'
 
 interface BatchPaymentModalProps {
   onClose: () => void
@@ -240,12 +241,14 @@ export function BatchPaymentModal({ onClose }: BatchPaymentModalProps) {
                 Batch fee: {batchFeeWei != null ? `${Number(formatEther(batchFeeWei)).toFixed(6)} ETH` : '—'}
               </div>
               <div className="flex items-center gap-2">
-                <button
+                <Button
                   onClick={() => setShowCsvInput((s) => !s)}
-                  className="px-2 py-1 bg-dark-700 hover:bg-dark-600 rounded text-white"
+                  variant="secondary"
+                  fullWidth={false}
+                  className="px-2 py-1 text-sm"
                 >
                   {showCsvInput ? 'Close CSV' : 'Paste CSV'}
-                </button>
+                </Button>
                 <label className="px-2 py-1 bg-dark-700 hover:bg-dark-600 rounded text-white cursor-pointer">
                   Upload CSV
                   <input
@@ -271,12 +274,14 @@ export function BatchPaymentModal({ onClose }: BatchPaymentModalProps) {
                   className="w-full h-24 bg-dark-800/50 border border-dark-600 rounded-lg px-3 py-2 text-sm text-white"
                 />
                 <div className="flex justify-end">
-                  <button
+                  <Button
                     onClick={onCsvImport}
-                    className="px-3 py-1 bg-dark-700 hover:bg-dark-600 rounded text-white text-sm"
+                    variant="secondary"
+                    fullWidth={false}
+                    className="px-3 py-1 text-sm"
                   >
                     Import
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -299,32 +304,38 @@ export function BatchPaymentModal({ onClose }: BatchPaymentModalProps) {
                     step="0.0001"
                     className="col-span-4 bg-dark-800/50 border border-dark-600 rounded-lg px-3 py-2 text-sm text-white"
                   />
-                  <button
+                  <Button
                     onClick={() => removeRow(row.id)}
-                    className="col-span-1 text-sm px-3 py-2 bg-dark-700 rounded-lg text-white hover:bg-dark-600"
+                    variant="outline"
+                    fullWidth={false}
+                    className="col-span-1 text-sm px-3 py-2"
                     aria-label="Remove row"
                     title="Remove"
                   >
                     ✕
-                  </button>
+                  </Button>
                 </div>
               ))}
             </div>
 
             <div className="flex items-center justify-between">
-              <button
+              <Button
                 onClick={addRow}
-                className="px-4 py-2 bg-dark-700 hover:bg-dark-600 rounded-lg text-white text-sm"
+                variant="secondary"
+                fullWidth={false}
+                className="text-sm"
               >
                 + Add recipient
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={onSubmit}
-                disabled={loading || !allInputsValid}
-                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 rounded-lg text-white text-sm disabled:opacity-60"
+                disabled={!allInputsValid}
+                loading={loading}
+                fullWidth={false}
+                className="text-sm"
               >
-                {loading ? 'Submitting...' : 'Send Batch'}
-              </button>
+                Send Batch
+              </Button>
             </div>
           </div>
         </motion.div>
