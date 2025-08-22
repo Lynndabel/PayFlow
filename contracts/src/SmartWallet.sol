@@ -125,6 +125,30 @@ contract SmartWallet is ReentrancyGuard {
     }
 
     /**
+     * @dev Called by another SmartWallet to credit this wallet's owner with received ETH
+     *      Assumes the native value was already sent along with the call
+     */
+    function receiveFromWallet() external payable nonReentrant {
+        require(msg.value > 0, "No value");
+        // Credit the owner of this wallet
+        balances[owner] += msg.value;
+        emit Deposit(owner, msg.value);
+    }
+
+    /**
+     * @dev Called by another SmartWallet AFTER transferring tokens to this contract address
+     * @param token Token contract address
+     * @param amount Amount already received by this contract
+     */
+    function receiveTokenFromWallet(address token, uint256 amount) external nonReentrant {
+        require(token != address(0), "Invalid token");
+        require(amount > 0, "Invalid amount");
+        // Credit the owner of this wallet for the tokens held by this contract
+        tokenBalances[owner][token] += amount;
+        emit TokenDeposit(owner, token, amount);
+    }
+
+    /**
      * @dev Send ETH payment using phone number or username
      * @param identifier Phone number or username of recipient
      * @param amount Amount to send
@@ -160,8 +184,12 @@ contract SmartWallet is ReentrancyGuard {
         
         uint256 fee = (feeBps > 0 && feeRecipient != address(0)) ? (amount * feeBps) / 10_000 : 0;
         uint256 net = amount - fee;
+        // Deduct full amount from sender's internal balance
         balances[user] -= amount;
-        balances[recipient] += net;
+        // Send net native value to recipient wallet and have it credit its owner
+        (bool ok, ) = payable(recipient).call{value: net}(abi.encodeWithSignature("receiveFromWallet()"));
+        require(ok, "Recipient credit failed");
+        // Handle fee internally (kept in this wallet's ledger for feeRecipient)
         if (fee > 0) {
             balances[feeRecipient] += fee;
         }
@@ -221,8 +249,11 @@ contract SmartWallet is ReentrancyGuard {
         
         uint256 fee = (feeBps > 0 && feeRecipient != address(0)) ? (amount * feeBps) / 10_000 : 0;
         uint256 net = amount - fee;
+        // Deduct from sender's token internal balance
         tokenBalances[user][token] -= amount;
-        tokenBalances[recipient][token] += net;
+        // Transfer tokens to recipient wallet contract, then notify for internal credit
+        IERC20(token).safeTransfer(recipient, net);
+        SmartWallet(payable(recipient)).receiveTokenFromWallet(token, net);
         if (fee > 0) {
             tokenBalances[feeRecipient][token] += fee;
         }

@@ -1,9 +1,10 @@
 // hooks/useSmartWallet.ts
 import { useState, useEffect, useCallback } from 'react'
 import { useAccount } from 'wagmi'
-import { Address, formatEther, parseEther } from 'viem'
+import { Address, formatEther, parseEther, parseUnits } from 'viem'
 import { smartWalletService } from '@/lib/contracts/contracts'
 import toast from 'react-hot-toast'
+import { getTokenAddress } from '@/lib/contracts/address'
 
 // Types
 export interface TokenBalance {
@@ -351,17 +352,19 @@ export function useSendPayment() {
   const sendPayment = useCallback(async (
     identifier: string,
     amount: string,
-    token: 'ETH' | string = 'ETH'
+    token: 'ETH' | 'MNT' | 'USDC' | 'USDT' | string = 'ETH'
   ) => {
     if (!userAddress || !smartWalletAddress) throw new Error('Wallet not initialized')
 
     try {
       setLoading(true)
-      const amountWei = parseEther(amount)
-      
       let txHash: Address
-      
-      if (token === 'ETH') {
+
+      // Treat MNT (Mantle native) the same as ETH path in our contract (internal ETH balance)
+      const isNative = token === 'ETH' || token === 'MNT'
+
+      if (isNative) {
+        const amountWei = parseEther(amount)
         txHash = await smartWalletService.sendPayment(
           smartWalletAddress,
           identifier,
@@ -369,8 +372,26 @@ export function useSendPayment() {
           userAddress
         )
       } else {
-        // TODO: Handle token payments
-        throw new Error('Token payments not implemented yet')
+        // Token payments: resolve token address and decimals, then call sendTokenPayment
+        // Supports USDC and USDT (and any token passed that exists in address map)
+        let tokenAddress: Address
+        try {
+          tokenAddress = getTokenAddress(token as 'USDC' | 'USDT') as Address
+        } catch (_e) {
+          throw new Error(`Unsupported token: ${token}`)
+        }
+
+        // Use on-chain decimals for correctness (USDC/USDT usually 6)
+        const decimals = await smartWalletService.tokenDecimals(tokenAddress)
+        const amountUnits = parseUnits(amount, decimals)
+
+        txHash = await smartWalletService.sendTokenPayment(
+          smartWalletAddress,
+          identifier,
+          tokenAddress,
+          amountUnits,
+          userAddress
+        )
       }
 
       await smartWalletService.waitForTransaction(txHash)
