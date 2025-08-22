@@ -79,6 +79,8 @@ export const CONTRACT_ADDRESSES: Addresses = STATIC_ADDRESSES
   // USDT: '0x...' as `0x${string}`,
   // DAI:  '0x...' as `0x${string}`,
   export const TOKEN_ADDRESSES = {
+    USDC: '0xAcab8129E2cE587fD203FD770ec9ECAFA2C88080' as `0x${string}`, // Official USDC on Mantle Sepolia
+    USDT: '0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE' as `0x${string}`, // Official USDT on Mantle Sepolia
   } as const
   
   // Contract deployment info
