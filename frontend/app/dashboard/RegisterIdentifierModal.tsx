@@ -59,6 +59,7 @@ export function RegisterIdentifierModal({ onClose, onSuccess }: RegisterIdentifi
   const [isPhoneVerified, setIsPhoneVerified] = useState(false)
   const [sendingCode, setSendingCode] = useState(false)
   const [resendingCode, setResendingCode] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0) // seconds
 
   const { registerIdentifier, checkAvailability, refreshIdentifiers } = useUserIdentifiers()
   const { hasWallet, createWallet, refreshWallet } = useSmartWallet()
@@ -78,6 +79,15 @@ export function RegisterIdentifierModal({ onClose, onSuccess }: RegisterIdentifi
   const watchedValues = watch()
   const identifierType = watch('type')
   const identifier = watch('identifier')
+
+  // Cooldown ticker
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const timer = setInterval(() => {
+      setResendCooldown((s) => (s > 0 ? s - 1 : 0))
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [resendCooldown])
 
   // Check availability when identifier changes
   useEffect(() => {
@@ -118,39 +128,46 @@ export function RegisterIdentifierModal({ onClose, onSuccess }: RegisterIdentifi
       }
     }
 
-    const debounceTimer = setTimeout(checkIdentifierAvailability, 500)
+    const debounceTimer = setTimeout(checkIdentifierAvailability, 250)
     return () => clearTimeout(debounceTimer)
   }, [identifier, identifierType, checkAvailability])
 
   const onSubmit = async (data: IdentifierForm) => {
     if (data.type === 'phone') {
-      setSendingCode(true)
-      try {
-        const normalized = normalizePhoneE164(data.identifier.trim())
-        if (!normalized) {
-          toast.error('Enter phone in E.164 format, e.g. +15551234567')
-          return
-        }
-        const res = await phoneVerificationService.sendVerificationCode(normalized)
-        if (!res.success) {
-          toast.error(res.error || 'Failed to send verification code')
-          return
-        }
-        setVerificationId(res.verificationId || '')
-        if (res.mockCode) {
-          setMockCode(res.mockCode)
-        }
-        if (res.mockCode) {
-          toast.success(`Mock code: ${res.mockCode}`)
-        }
-        setStep('verify')
-        toast.success('Verification code sent!')
-      } catch (error) {
-        toast.error('Failed to send verification code')
-        console.error(error)
-      } finally {
-        setSendingCode(false)
+      // Optimistic: move to verify immediately while we send code in background
+      const normalized = normalizePhoneE164(data.identifier.trim())
+      if (!normalized) {
+        toast.error('Enter phone in E.164 format, e.g. +15551234567')
+        return
       }
+
+      setSendingCode(true)
+      setResendCooldown((s) => (s > 0 ? s : 25)) // start initial cooldown
+      setStep('verify')
+
+      // Fire-and-forget send; update UI when result arrives
+      phoneVerificationService
+        .sendVerificationCode(normalized)
+        .then((res) => {
+          if (!res.success) {
+            toast.error(res.error || 'Failed to send verification code')
+            // If sending fails, allow user to go back and retry
+            setStep('form')
+            return
+          }
+          setVerificationId(res.verificationId || '')
+          if (res.mockCode) {
+            setMockCode(res.mockCode)
+            toast.success(`Mock code: ${res.mockCode}`)
+          }
+          toast.success('Verification code sent!')
+        })
+        .catch((error) => {
+          console.error(error)
+          toast.error('Failed to send verification code')
+          setStep('form')
+        })
+        .finally(() => setSendingCode(false))
     } else {
       // For usernames, go directly to processing
       await processRegistration(data)
@@ -223,6 +240,7 @@ export function RegisterIdentifierModal({ onClose, onSuccess }: RegisterIdentifi
   }
 
   const resendCode = async () => {
+    if (resendingCode || resendCooldown > 0) return
     setResendingCode(true)
     try {
       const normalized = normalizePhoneE164(watchedValues.identifier.trim())
@@ -243,6 +261,7 @@ export function RegisterIdentifierModal({ onClose, onSuccess }: RegisterIdentifi
         toast.success(`Mock code: ${res.mockCode}`)
       }
       toast.success('Verification code sent!')
+      setResendCooldown(25)
     } catch (error) {
       toast.error('Failed to resend code')
       console.error(error)
@@ -525,7 +544,7 @@ export function RegisterIdentifierModal({ onClose, onSuccess }: RegisterIdentifi
                 <div className="text-center">
                   <button
                     onClick={resendCode}
-                    disabled={resendingCode}
+                    disabled={resendingCode || resendCooldown > 0}
                     className="text-sm text-secondary-400 hover:text-secondary-300 disabled:text-gray-500 transition-colors disabled:cursor-not-allowed flex items-center justify-center space-x-1"
                   >
                     {resendingCode ? (
@@ -534,12 +553,22 @@ export function RegisterIdentifierModal({ onClose, onSuccess }: RegisterIdentifi
                         <span>Sending...</span>
                       </>
                     ) : (
-                      <span>Didn't receive the code? Resend</span>
+                      <span>
+                        {resendCooldown > 0
+                          ? `Resend available in ${resendCooldown}s`
+                          : `Didn\'t receive the code? Resend`}
+                      </span>
                     )}
                   </button>
                 </div>
 
-                {/* Actions */}
+                {/* Status + Actions */}
+                {(sendingCode || resendingCode) && (
+                  <div className="flex items-center text-sm text-gray-400">
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    <span>{resendingCode ? 'Resending code…' : 'Sending code…'}</span>
+                  </div>
+                )}
                 <div className="flex space-x-3">
                   <button
                     onClick={() => setStep('form')}
