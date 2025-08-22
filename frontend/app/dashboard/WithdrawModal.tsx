@@ -7,6 +7,11 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
 import { useWalletBalances } from '@/hooks/useSmartWallet'
+import { useSmartWallet } from '@/hooks/useSmartWallet'
+import { useAccount } from 'wagmi'
+import { parseEther, parseUnits, Address } from 'viem'
+import { smartWalletService } from '@/lib/contracts/contracts'
+import { TOKEN_ADDRESSES, getExplorerUrl } from '@/lib/contracts/address'
 import {
   X,
   ArrowUpFromLine,
@@ -26,11 +31,7 @@ const withdrawSchema = z.object({
     (val) => !isNaN(Number(val)) && Number(val) > 0,
     'Amount must be a valid positive number'
   ),
-  token: z.string().min(1, 'Token is required'),
-  recipient: z.string().min(1, 'Recipient address is required').refine(
-    (val) => val.startsWith('0x') && val.length === 42,
-    'Invalid Ethereum address'
-  )
+  token: z.string().min(1, 'Token is required')
 })
 
 type WithdrawForm = z.infer<typeof withdrawSchema>
@@ -46,6 +47,8 @@ export function WithdrawModal({ onClose }: WithdrawModalProps) {
   const [selectedToken, setSelectedToken] = useState(tokens[0])
   const [estimatedGas, setEstimatedGas] = useState('0.0021')
   const { refreshBalances } = useWalletBalances()
+  const { smartWalletAddress } = useSmartWallet()
+  const { address: userAddress } = useAccount()
 
   const {
     register,
@@ -71,12 +74,38 @@ export function WithdrawModal({ onClose }: WithdrawModalProps) {
     setStep('processing')
     
     try {
-      // Simulate transaction (TODO: Replace with real blockchain withdrawal)
-      await new Promise(resolve => setTimeout(resolve, 3000))
-      
-      // Refresh balances after successful withdrawal
+      if (!smartWalletAddress || !userAddress) {
+        throw new Error('Wallet not initialized')
+      }
+
+      const amtStr = watchedValues.amount
+      const symbol = selectedToken.symbol
+
+      // Note: On Mantle, native token is MNT, but UI historically labeled as ETH.
+      // We treat the first option as native withdrawal.
+      if (symbol === 'ETH') {
+        const amountWei = parseEther(amtStr)
+        const txHash = await smartWalletService.withdraw(smartWalletAddress as Address, amountWei, userAddress as Address)
+        await smartWalletService.waitForTransaction(txHash)
+      } else {
+        // ERC20 path: resolve token address from config and fetch decimals dynamically
+        const configured = (TOKEN_ADDRESSES as Record<string, string>)[symbol]
+        if (!configured || !/^0x[0-9a-fA-F]{40}$/.test(configured)) {
+          throw new Error(`Token address not configured for ${symbol}. Please configure TOKEN_ADDRESSES in lib/contracts/address.ts`)
+        }
+        const tokenAddr = configured as Address
+        const decimals = await smartWalletService.tokenDecimals(tokenAddr)
+        const amountUnits = parseUnits(amtStr, decimals)
+        const txHash = await smartWalletService.withdrawToken(
+          smartWalletAddress as Address,
+          tokenAddr,
+          amountUnits,
+          userAddress as Address
+        )
+        await smartWalletService.waitForTransaction(txHash)
+      }
+
       await refreshBalances()
-      
       setStep('success')
       toast.success('Withdrawal completed successfully!')
     } catch (error) {
@@ -116,7 +145,7 @@ export function WithdrawModal({ onClose }: WithdrawModalProps) {
               </div>
               <div>
                 <h2 className="text-xl font-bold text-white">Withdraw Funds</h2>
-                <p className="text-sm text-gray-400">Move funds to external wallet</p>
+                <p className="text-sm text-gray-400">Move funds from smart wallet to your wallet</p>
               </div>
             </div>
             <button
@@ -137,10 +166,8 @@ export function WithdrawModal({ onClose }: WithdrawModalProps) {
                 <div className="flex items-start space-x-3 p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl">
                   <AlertTriangle className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="font-semibold text-orange-300 mb-1">Double Check Everything</h4>
-                    <p className="text-sm text-orange-200/80">
-                      Make sure the recipient address is correct. Transactions cannot be reversed.
-                    </p>
+                    <h4 className="font-semibold text-orange-300 mb-1">Heads up</h4>
+                    <p className="text-sm text-orange-200/80">Withdrawals go to your connected wallet. Transactions cannot be reversed.</p>
                   </div>
                 </div>
 
@@ -211,31 +238,15 @@ export function WithdrawModal({ onClose }: WithdrawModalProps) {
                   </div>
                 </div>
 
-                {/* Recipient Address */}
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    Recipient Address
-                  </label>
-                  <input
-                    {...register('recipient')}
-                    type="text"
-                    placeholder="0x..."
-                    className="w-full px-4 py-3 bg-dark-700/50 border border-dark-600 focus:border-secondary-500 focus:ring-2 focus:ring-secondary-500/20 rounded-lg text-white placeholder-gray-400 transition-all duration-200 font-mono text-sm"
-                  />
-                  {errors.recipient && (
-                    <p className="mt-1 text-sm text-red-400">{errors.recipient.message}</p>
-                  )}
-                </div>
-
                 {/* Gas estimate */}
                 <div className="p-3 bg-dark-700/30 rounded-lg border border-dark-600/50">
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-400">Estimated Gas Fee</span>
-                    <span className="text-white font-medium">{estimatedGas} ETH</span>
+                    <span className="text-white font-medium">{estimatedGas} MNT</span>
                   </div>
                   <div className="flex justify-between items-center text-sm mt-1">
                     <span className="text-gray-400">Network</span>
-                    <span className="text-white">Mantle Testnet</span>
+                    <span className="text-white">Mantle Sepolia Testnet</span>
                   </div>
                 </div>
 
@@ -258,7 +269,7 @@ export function WithdrawModal({ onClose }: WithdrawModalProps) {
                     <ArrowUpFromLine className="w-8 h-8 text-white" />
                   </div>
                   <h3 className="text-xl font-bold text-white mb-2">Confirm Withdrawal</h3>
-                  <p className="text-gray-400">Please verify all details before proceeding</p>
+                  <p className="text-gray-400">Funds will be sent to your connected wallet</p>
                 </div>
 
                 {/* Withdrawal details */}
@@ -271,21 +282,19 @@ export function WithdrawModal({ onClose }: WithdrawModalProps) {
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-400">To Address</span>
-                      <span className="text-sm text-white font-mono">
-                        {watchedValues.recipient?.slice(0, 8)}...{watchedValues.recipient?.slice(-8)}
-                      </span>
+                      <span className="text-sm text-gray-400">Destination</span>
+                      <span className="text-sm text-white font-mono">Your wallet</span>
                     </div>
                   </div>
 
                   <div className="p-4 bg-dark-700/30 rounded-lg border border-dark-600/50">
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm text-gray-400">Gas Fee</span>
-                      <span className="text-sm text-white">{estimatedGas} ETH</span>
+                      <span className="text-sm text-white">{estimatedGas} MNT</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-400">Network</span>
-                      <span className="text-sm text-white">Mantle Testnet</span>
+                      <span className="text-sm text-white">Mantle Sepolia Testnet</span>
                     </div>
                   </div>
 
@@ -295,7 +304,7 @@ export function WithdrawModal({ onClose }: WithdrawModalProps) {
                       <span className="text-sm font-semibold text-orange-300">Final Warning</span>
                     </div>
                     <p className="text-sm text-orange-200/80">
-                      This transaction cannot be reversed. Make sure the recipient address is correct.
+                      This transaction cannot be reversed.
                     </p>
                   </div>
                 </div>
@@ -346,7 +355,7 @@ export function WithdrawModal({ onClose }: WithdrawModalProps) {
                 </p>
                 <div className="space-y-3">
                   <button
-                    onClick={() => window.open('https://explorer.testnet.mantle.xyz', '_blank')}
+                    onClick={() => window.open(getExplorerUrl(5003), '_blank')}
                     className="w-full py-3 bg-dark-700/50 hover:bg-dark-600/50 border border-dark-600 hover:border-primary-500/50 text-white font-medium rounded-lg transition-all duration-200 flex items-center justify-center space-x-2"
                   >
                     <span>View on Explorer</span>

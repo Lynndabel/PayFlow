@@ -486,6 +486,26 @@ export class SmartWalletService {
     return await walletClient.writeContract(request)
   }
 
+  async withdrawToken(
+    walletAddress: Address,
+    token: Address,
+    amount: bigint,
+    account: Address
+  ) {
+    const walletClient = getWalletClient()
+    if (!walletClient) throw new Error('Wallet not connected')
+
+    const { request } = await publicClient.simulateContract({
+      address: walletAddress,
+      abi: SmartWalletABI,
+      functionName: 'withdrawToken',
+      args: [token, amount],
+      account,
+    })
+
+    return await walletClient.writeContract(request)
+  }
+
   async getSentPayments(walletAddress: Address, userAddress: Address) {
     return await publicClient.readContract({
       address: walletAddress,
